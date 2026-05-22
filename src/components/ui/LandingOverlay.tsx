@@ -70,8 +70,8 @@ export default function LandingOverlay({ onEnter }: LandingOverlayProps) {
               transition={{ duration: 1.2, ease: "easeOut" }}
               className="mb-6 sm:mb-8"
             >
-              <h1 className="text-4xl sm:text-7xl font-black tracking-tighter landscape-optimized-landing-title">
-                LUXI <span className="text-brand-primary">WEAR</span>
+              <h1 className="text-4xl sm:text-7xl font-black tracking-tighter landscape-optimized-landing-title flex items-center justify-center gap-2 sm:gap-4">
+                <span className="bg-black text-white px-3 sm:px-5 py-1 sm:py-2 rounded-xl flex items-center">LUXI</span> <span className="text-brand-primary">WEAR</span>
               </h1>
               <p className="text-xs sm:text-sm font-bold text-text-muted uppercase tracking-[0.4em] mt-2 landscape-optimized-landing-subtitle">
                 Signature Streetwear

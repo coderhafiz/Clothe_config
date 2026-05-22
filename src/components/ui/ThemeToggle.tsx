@@ -10,7 +10,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 sm:p-3 glass rounded-full glass-hover relative overflow-hidden group"
+      className="p-1 sm:p-3 glass rounded-full glass-hover relative overflow-hidden group"
       aria-label="Toggle Theme"
     >
       <motion.div
@@ -22,7 +22,7 @@ export default function ThemeToggle() {
         transition={{ duration: 0.3 }}
         className="flex items-center justify-center"
       >
-        <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />
+        <Moon className="w-3 h-3 sm:w-5 sm:h-5 text-brand-primary" />
       </motion.div>
       
       <motion.div
@@ -34,7 +34,7 @@ export default function ThemeToggle() {
         transition={{ duration: 0.3 }}
         className="absolute inset-0 flex items-center justify-center"
       >
-        <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-brand-primary" />
+        <Sun className="w-3 h-3 sm:w-5 sm:h-5 text-brand-primary" />
       </motion.div>
     </button>
   );

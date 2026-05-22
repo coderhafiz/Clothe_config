@@ -219,7 +219,7 @@ export default function Home() {
             className="pointer-events-auto"
           >
             <h1 className="text-xl lg:text-2xl font-black tracking-tighter flex items-center gap-2">
-              LUXI <span className="text-brand-primary">WEAR</span>
+              <span className="bg-black text-white px-2 py-0.5 rounded flex items-center">LUXI</span> <span className="text-brand-primary">WEAR</span>
             </h1>
           </motion.div>
         </header>
@@ -231,7 +231,7 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <div className="relative w-full h-full">
+          <div className="absolute inset-0 z-0">
             {(showConfigurator || shouldEagerLoad) && (
               <ConfiguratorCanvas
                 config={config}

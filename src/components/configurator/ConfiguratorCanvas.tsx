@@ -385,7 +385,7 @@ export default function ConfiguratorCanvas({
 
   return (
     <div
-      className="relative w-full h-full select-none"
+      className="absolute inset-0 select-none"
       style={{ touchAction: "none" }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -404,8 +404,12 @@ export default function ConfiguratorCanvas({
         dpr={canvasOpts.dpr}
         className="w-full h-full"
       >
-        <PreloadModels />
-        <PreloadTextures />
+        {!isInitialLoading && (
+          <>
+            <PreloadModels />
+            <PreloadTextures />
+          </>
+        )}
 
         {/* Adaptive performance monitor — steps DOF quality up/down based on FPS */}
         <PerformanceMonitor

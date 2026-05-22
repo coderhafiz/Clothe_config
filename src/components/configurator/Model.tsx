@@ -600,7 +600,9 @@ export function Model({
             child.name ===
             "Area.001" ||
             child.name ===
-            "Plane"
+            "Plane" ||
+            child.name ===
+            "Cylinder"
           ) {
             child.visible =
               false;

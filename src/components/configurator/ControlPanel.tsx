@@ -58,13 +58,13 @@ function Folder({
     <div className="mb-1">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 sm:px-4 py-1.5 text-left group"
+        className="w-full flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-1.5 text-left group"
       >
         <ChevronDown
-          className={`w-3 h-3 transition-transform shrink-0 text-text-muted ${open ? "" : "-rotate-90"}`}
+          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0 text-text-muted ${open ? "" : "-rotate-90"}`}
         />
         <span
-          className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-text-main"
+          className="text-[8px] sm:text-xs font-bold uppercase tracking-widest text-text-main"
         >
           {title}
         </span>
@@ -113,16 +113,16 @@ function SliderRow({
 }) {
   const display = step < 1 ? value.toFixed(2) : Math.round(value).toString();
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 landscape-optimized-row">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row">
       <div className="flex justify-between items-center sm:block sm:w-32 shrink-0">
-        <span className="text-[11px] sm:text-sm font-semibold text-text-main truncate">
+        <span className="text-[9px] sm:text-sm font-semibold text-text-main truncate">
           {label}
         </span>
-        <span className="text-[10px] sm:hidden tabular-nums text-text-muted">
+        <span className="text-[8px] sm:hidden tabular-nums text-text-muted">
           {display}
         </span>
       </div>
-      <div className="flex items-center gap-2 flex-1 w-full">
+      <div className="flex items-center gap-1 sm:gap-2 flex-1 w-full sm:w-auto min-w-0">
         <input
           type="range"
           min={min}
@@ -153,14 +153,14 @@ function SelectRow({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 landscape-optimized-row">
-      <span className="text-[11px] sm:text-sm font-semibold text-text-main truncate sm:w-32 shrink-0">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row">
+      <span className="text-[9px] sm:text-sm font-semibold text-text-main truncate sm:w-32 shrink-0">
         {label}
       </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full sm:flex-1 text-[11px] sm:text-sm rounded-lg px-2 py-1 border border-glass-border outline-none cursor-pointer bg-bg-dark text-text-main"
+        className="w-full sm:flex-1 text-[9px] sm:text-sm rounded-lg px-1.5 py-0.5 sm:px-2 sm:py-1 border border-glass-border outline-none cursor-pointer bg-bg-dark text-text-main"
       >
         {Object.entries(options).map(([name, val]) => (
           <option key={val} value={val}>
@@ -184,13 +184,13 @@ function ToggleRow({
 }) {
   const { theme } = useTheme();
   return (
-    <div className="flex items-center justify-between gap-2 px-3 sm:px-5 py-1.5 sm:py-2 landscape-optimized-row">
-      <span className="text-[11px] sm:text-sm font-semibold text-text-main truncate">
+    <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row">
+      <span className="text-[9px] sm:text-sm font-semibold text-text-main truncate sm:w-32 shrink-0">
         {label}
       </span>
       <button
         onClick={() => onChange(!value)}
-        className={`relative w-9 h-5 rounded-full transition-colors border ${
+        className={`relative w-7 h-4 sm:w-9 sm:h-5 rounded-full transition-colors border ${
           value
             ? "bg-[#c4a484] border-[#c4a484]"
             : theme === "dark"
@@ -199,8 +199,8 @@ function ToggleRow({
         }`}
       >
         <span
-          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-            value ? "translate-x-4" : ""
+          className={`absolute top-0.5 left-0.5 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-white shadow transition-transform ${
+            value ? "translate-x-3 sm:translate-x-4" : ""
           }`}
         />
       </button>
@@ -269,7 +269,7 @@ export default function ControlPanel({
 
   const innerContent = (
     <div
-      className="mx-1.5 sm:mx-2 rounded-2xl py-1.5 sm:py-2 bg-inner-panel-bg border border-inner-panel-border"
+      className="mx-0 sm:mx-2 rounded-2xl py-1.5 sm:py-2 bg-inner-panel-bg border border-inner-panel-border"
     >
       {/* ── View & Lighting ── */}
       <Folder
@@ -304,11 +304,11 @@ export default function ControlPanel({
           options={TEXTURE_OPTIONS}
           onChange={(v) => setConfig((p) => ({ ...p, selectedTexture: v }))}
         />
-        <div className="flex items-center justify-between gap-2 px-3 sm:px-5 py-1.5 sm:py-2 landscape-optimized-row">
-          <span className="text-[11px] sm:text-sm font-semibold text-text-main truncate">
+        <div className="flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row">
+          <span className="text-[9px] sm:text-sm font-semibold text-text-main truncate">
             Base Finish
           </span>
-          <span className="text-[11px] sm:text-sm font-medium text-text-muted">
+          <span className="text-[9px] sm:text-sm font-medium text-text-muted">
             {selectedModelInfo.materialType}
           </span>
         </div>
@@ -342,15 +342,15 @@ export default function ControlPanel({
             return (
               <div
                 key={label}
-                className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl hover:bg-white/5 transition-colors landscape-optimized-row"
+                className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 px-1.5 sm:px-1 py-1 sm:py-2 rounded-xl hover:bg-white/5 transition-colors landscape-optimized-row"
               >
                 {/* Part label */}
-                <span className="text-[11px] sm:text-sm font-semibold text-text-main capitalize sm:w-28 shrink-0">
+                <span className="text-[9px] sm:text-sm font-semibold text-text-main capitalize sm:w-28 shrink-0">
                   {label}
                 </span>
 
                 {/* Swatches */}
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                   {PALETTE.map((color) => {
                     const isActive = current === color.hex;
                     return (
@@ -358,7 +358,7 @@ export default function ControlPanel({
                         key={color.hex}
                         title={color.name}
                         onClick={() => setGroupColor(ids, color.hex)}
-                        className="relative w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-transform hover:scale-110 focus:outline-none shrink-0 border border-white/20"
+                        className="relative w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full transition-transform hover:scale-110 focus:outline-none shrink-0 border border-white/20"
                         style={{ backgroundColor: color.hex }}
                       >
                         {isActive && (
@@ -373,14 +373,14 @@ export default function ControlPanel({
           })}
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-x-2 gap-y-1 px-2 sm:px-4 pt-3 landscape-optimized-legend">
+          <div className="flex flex-wrap gap-x-1.5 sm:gap-x-2 gap-y-0.5 sm:gap-y-1 px-1.5 sm:px-4 pt-2 sm:pt-3 landscape-optimized-legend">
             {PALETTE.map((c) => (
               <span
                 key={c.hex}
-                className="flex items-center gap-1 text-[9px] sm:text-xs text-text-muted"
+                className="flex items-center gap-0.5 sm:gap-1 text-[7px] sm:text-xs text-text-muted"
               >
                 <span
-                  className="w-1.5 h-1.5 rounded-full inline-block shrink-0"
+                  className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full inline-block shrink-0"
                   style={{ backgroundColor: c.hex }}
                 />
                 {c.name}
@@ -413,33 +413,33 @@ export default function ControlPanel({
         initial={false}
         animate={{ x: isCollapsed ? "100%" : "0%" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="fixed top-0 right-0 w-[240px] sm:w-[420px] h-screen z-50 select-none desktop-dark-panel bg-black border-l border-glass-border flex flex-col shadow-2xl"
+        className="fixed top-0 right-0 w-1/2 sm:w-[420px] h-screen z-50 select-none desktop-dark-panel bg-black border-l border-glass-border flex flex-col shadow-2xl"
       >
         {/* Header */}
         <div
-          className="p-4 sm:p-6 pb-2.5 sm:pb-4 border-b border-glass-border sm:mb-2 flex flex-col cursor-pointer group"
+          className="p-2 sm:p-6 pb-1.5 sm:pb-4 border-b border-glass-border sm:mb-2 flex flex-col cursor-pointer group"
           onClick={() => setIsCollapsed(true)}
         >
           {/* Top row with buttons and close chevron */}
-          <div className="flex justify-between items-center w-full mb-3 sm:mb-4">
+          <div className="flex justify-between items-center w-full mb-2 sm:mb-4">
           {/* Action buttons — always in sidebar */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onShare();
               }}
-              className="p-1.5 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
+              className="p-1 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
             >
-              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary" />
+              <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-brand-primary" />
             </button>
             <button
               onClick={(e) => e.stopPropagation()}
-              className="p-1.5 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
+              className="p-1 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
             >
-              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary" />
-              <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-brand-secondary rounded-full border border-bg-dark" />
+              <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4 text-brand-primary" />
+              <span className="absolute top-0 right-0 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-brand-secondary rounded-full border border-bg-dark" />
             </button>
           </div>
           
@@ -450,17 +450,17 @@ export default function ControlPanel({
                 e.stopPropagation();
                 setIsCollapsed(true);
               }}
-              className="p-1.5 rounded-full bg-(--glass-bg) hover:bg-(--brand-primary)/10 transition-colors cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-full bg-(--glass-bg) hover:bg-(--brand-primary)/10 transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4 text-brand-primary" />
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-brand-primary" />
             </button>
           </div>
 
           <div>
-            <h2 className="text-lg sm:text-2xl font-bold tracking-tight group-hover:text-brand-primary transition-colors">
+            <h2 className="text-sm sm:text-2xl font-bold tracking-tight group-hover:text-brand-primary transition-colors">
               Configure Apparel
             </h2>
-            <p className="text-[9px] sm:text-xs text-text-muted uppercase tracking-widest font-bold mt-0.5 sm:mt-2">
+            <p className="text-[7px] sm:text-xs text-text-muted uppercase tracking-widest font-bold mt-0.5 sm:mt-2">
               LUXI WEAR Studio
             </p>
           </div>
@@ -468,7 +468,7 @@ export default function ControlPanel({
 
         {/* Scrollable body */}
         <div
-          className="overflow-hidden overflow-y-auto custom-scrollbar px-3 sm:px-4 py-3 sm:py-6 space-y-4 sm:space-y-8 flex-1 min-h-0"
+          className="overflow-hidden overflow-y-auto custom-scrollbar px-1.5 sm:px-4 py-2 sm:py-6 space-y-2 sm:space-y-8 flex-1 min-h-0"
           style={{ overflowX: "hidden" }}
         >
           {innerContent}
