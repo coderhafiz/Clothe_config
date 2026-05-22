@@ -33,6 +33,17 @@ if (typeof window !== "undefined") {
 import { Model, ConfigState, PreloadModels, PreloadTextures, MODELS, setupLoaders } from "./Model";
 import { motion } from "framer-motion";
 
+// Force a resize event after mount to fix initial dimension calculations in CSS-scaled mobile simulators
+function ResizeFix() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
+  return null;
+}
+
 interface ConfiguratorCanvasProps {
   onLoaded: () => void;
   config: ConfigState;
@@ -153,9 +164,8 @@ function SceneContent({
       targetFoc.current.copy(combinedCenter);
 
       isAutoFraming.current = true;
-      onLoaded();
     }
-  }, [gltf, camera, combinedCenter, onLoaded]);
+  }, [gltf, camera, combinedCenter]);
 
   // Extract Blender area lights dynamically
   const areaLights = useMemo(() => {
@@ -232,6 +242,7 @@ function SceneContent({
 
   return (
     <>
+      <ResizeFix />
       <Environment
         files="/hdri/brown_photostudio_01_1k.exr"
         blur={1}

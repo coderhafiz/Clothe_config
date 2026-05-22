@@ -446,6 +446,12 @@ export function Model({
     );
 
   useEffect(() => {
+    if (onFirstPaint) {
+      onFirstPaint();
+    }
+  }, [onFirstPaint]);
+
+  useEffect(() => {
     if (luxiLogo) {
       luxiLogo.colorSpace =
         THREE.SRGBColorSpace;
@@ -595,17 +601,13 @@ export function Model({
           child
         ) => {
           if (
-            child.name ===
-            "Area" ||
-            child.name ===
-            "Area.001" ||
-            child.name ===
-            "Plane" ||
-            child.name ===
-            "Cylinder"
+            child.name === "Area" ||
+            child.name === "Area.001" ||
+            child.name === "Plane" ||
+            child.name === "platform" ||
+            child.name === "Cylinder"
           ) {
-            child.visible =
-              false;
+            child.visible = false;
           }
 
           if (
