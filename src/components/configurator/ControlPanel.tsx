@@ -8,6 +8,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  startTransition,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronRight, Sliders, Share2, ShoppingBag } from "lucide-react";
@@ -302,7 +303,7 @@ export default function ControlPanel({
           label="Material Texture"
           value={config.selectedTexture}
           options={TEXTURE_OPTIONS}
-          onChange={(v) => setConfig((p) => ({ ...p, selectedTexture: v }))}
+          onChange={(v) => startTransition(() => setConfig((p) => ({ ...p, selectedTexture: v })))}
         />
         <div className="flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row">
           <span className="text-[9px] sm:text-sm font-semibold text-text-main truncate">
@@ -325,7 +326,7 @@ export default function ControlPanel({
             label="Graphic Decal"
             value={config.selectedDecal}
             options={DECAL_OPTIONS}
-            onChange={(v) => setConfig((p) => ({ ...p, selectedDecal: v }))}
+            onChange={(v) => startTransition(() => setConfig((p) => ({ ...p, selectedDecal: v })))}
           />
         </Folder>
       )}

@@ -11,7 +11,6 @@ import {
 
 import {
   useGLTF,
-  useKTX2,
   useTexture,
   Decal,
 } from "@react-three/drei";
@@ -351,24 +350,18 @@ export function PreloadModels() {
 // =======================
 
 export function PreloadTextures() {
+  const { gl } = useThree();
+
   useEffect(() => {
-    Object.values(
-      TEXTURE_PATHS
-    ).forEach(
-      (paths) => {
-        Object.values(
-          paths
-        ).forEach(
-          (url) => {
-            useKTX2.preload(
-              url,
-              "/basis/"
-            );
-          }
-        );
-      }
-    );
-  }, []);
+    Object.values(TEXTURE_PATHS).forEach((paths) => {
+      Object.values(paths).forEach((url) => {
+        useLoader.preload(KTX2Loader, url, (loader: any) => {
+          loader.setTranscoderPath("/basis/");
+          loader.detectSupport(gl);
+        });
+      });
+    });
+  }, [gl]);
 
   return null;
 }
