@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="400" height="100">
+  <style>
+    .brand-name {
+      font-family: 'Outfit', 'Helvetica Neue', sans-serif;
+      font-weight: 900;
+      font-size: 55px;
+      fill: #ffffff;
+      letter-spacing: 0.25em;
+    }
+    .brand-sub {
+      font-family: 'Outfit', 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 10px;
+      fill: #ffffff;
+      opacity: 0.6;
+      letter-spacing: 0.5em;
+    }
+  </style>
+  <!-- Background border detail -->
+  <line x1="50" y1="20" x2="350" y2="20" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.3" />
+  <text x="52%" y="60%" dominant-baseline="middle" text-anchor="middle" class="brand-name">LUXI</text>
+  <text x="51%" y="85%" dominant-baseline="middle" text-anchor="middle" class="brand-sub">STUDIO WEAR</text>
+  <line x1="50" y1="95" x2="350" y2="95" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.3" />
+</svg>

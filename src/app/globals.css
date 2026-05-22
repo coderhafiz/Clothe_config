@@ -1,0 +1,378 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-bg-dark: var(--bg-main);
+  --color-card-bg: var(--card-bg);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --color-loader-bg: var(--loader-bg);
+  --color-inner-panel-bg: var(--inner-panel-bg);
+  --color-inner-panel-border: var(--inner-panel-border);
+}
+
+:root {
+  color-scheme: dark;
+  --brand-primary: #8a2be2;
+  --brand-secondary: #ff00ff;
+  /* Dark Theme (Default) */
+  --bg-main: #050505;
+  --card-bg: #121212;
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --glass-bg: #121212;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --loader-bg: #0a0a0c;
+  --inner-panel-bg: #0a0a0c;
+  --inner-panel-border: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-main: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-main: #050505;
+  --text-muted: rgba(0, 0, 0, 0.5);
+  --glass-bg: #ffffff;
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --loader-bg: #ffffff;
+  --inner-panel-bg: #f0f0f2;
+  --inner-panel-border: rgba(0, 0, 0, 0.07);
+}
+
+.desktop-dark-panel {
+  --bg-main: #000000;
+  --card-bg: #000000;
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --glass-bg: #000000;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --loader-bg: #000000;
+  --inner-panel-bg: #0a0a0c;
+  --inner-panel-border: rgba(255, 255, 255, 0.06);
+}
+
+@layer base {
+  body {
+    @apply bg-bg-dark text-text-main font-sans antialiased overflow-x-hidden transition-colors duration-500;
+    overscroll-behavior-y: none; /* Prevent iOS bounce */
+    -webkit-tap-highlight-color: transparent; /* Remove Safari tap highlight */
+    touch-action: manipulation; /* Improve tap responsiveness */
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-glass-bg border border-glass-border;
+  }
+
+  .glass-hover {
+    @apply hover:bg-white/10 dark:hover:bg-black/5 transition-all duration-300;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-linear-to-r from-brand-primary to-brand-secondary;
+  }
+}
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary);
+  box-shadow: 0 0 15px var(--brand-primary);
+}
+
+/* Global scrollbar fallback */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 10px;
+}
+
+/* 
+   ULTIMATE LEVA UI FIXES 
+   Targeting both portals and native elements for perfect translucency
+*/
+
+/* 1. Target the Portal Overlays (Color Pickers, Custom Menus) */
+[data-leva-portal] > div {
+  background-color: var(--loader-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2) !important;
+  padding: 8px !important;
+}
+
+/* 2. Target the actual list items and containers */
+[data-leva-portal] div {
+  color: var(--text-main) !important;
+  font-family: inherit !important;
+}
+
+/* 3. NATIVE SELECT FIX (The 'White Box' Issue) */
+select[class*="leva-"],
+select[class*="leva-"] option {
+  background-color: var(--card-bg) !important;
+  color: var(--text-main) !important;
+  appearance: none !important;
+  border-radius: 8px !important;
+}
+
+/* 4. Hover states for portal items */
+[data-leva-portal] div:hover {
+  background-color: rgba(196, 164, 132, 0.2) !important;
+}
+
+/* 5. Force background for the specific case in the screenshot */
+div[style*="background-color: white"] {
+  background-color: var(--loader-bg) !important;
+}
+/* Optimized Side-Panel for Landscape Phones */
+@media (min-width: 640px) and (max-height: 700px) and (orientation: landscape) {
+  .landscape-optimized-panel {
+    position: fixed !important;
+    top: 4rem !important;
+    right: 0.75rem !important;
+    bottom: auto !important;
+    width: clamp(220px, 26vw, 280px) !important;
+    max-height: calc(100dvh - 3.2rem) !important;
+    border-radius: 4px !important;
+    left: auto !important;
+  }
+
+  .landscape-optimized-panel [class*="rounded-"],
+  .landscape-optimized-info [class*="rounded-"] {
+    border-radius: 4px !important;
+  }
+
+  .landscape-optimized-info {
+    max-width: clamp(180px, 25vw, 240px) !important;
+    padding: 0.6rem 0.8rem !important;
+    left: 1.5rem !important;
+    bottom: 1.5rem !important;
+    top: auto !important;
+    z-index: 60 !important;
+    border-radius: 4px !important;
+  }
+
+
+
+  .landscape-optimized-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.1rem !important;
+    padding: 0.2rem 0.6rem !important;
+  }
+
+  .landscape-optimized-row > span {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    font-size: clamp(0.6rem, 1.2vh, 0.75rem) !important;
+    line-height: 1 !important;
+  }
+
+  .landscape-optimized-row button {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+
+  .landscape-optimized-row button span {
+    width: 0.75rem !important;
+    height: 0.75rem !important;
+    top: 0.075rem !important;
+    left: 0.1rem !important;
+  }
+
+  .landscape-optimized-row button span[class*="translate-x-4"] {
+    transform: translateX(0.75rem) !important;
+  }
+
+  .landscape-optimized-panel [class*="p-"],
+  .landscape-optimized-info [class*="p-"] {
+    padding: 0.15rem !important;
+  }
+
+  .landscape-optimized-panel h2 {
+    font-size: clamp(0.7rem, 1.5vh, 0.85rem) !important;
+    line-height: 1 !important;
+    margin-bottom: 0 !important;
+    padding: 0.4rem 0.8rem !important;
+  }
+
+  .landscape-optimized-panel [class*="space-y"] {
+    gap: 0.1rem !important;
+  }
+
+  .landscape-optimized-panel [class*="mx-2"] {
+    margin-left: 0.1rem !important;
+    margin-right: 0.1rem !important;
+  }
+
+  /* Glass card inner padding — near-zero to close the gap */
+  .landscape-optimized-panel [class*="p-0"],
+  .landscape-optimized-panel [class*="sm:p-2"] {
+    padding: 0 !important;
+  }
+
+  /* Scrollable body horizontal padding */
+  .landscape-optimized-panel [class*="px-4"] {
+    padding-left: 0.15rem !important;
+    padding-right: 0.15rem !important;
+  }
+
+  /* Scrollable body vertical padding */
+  .landscape-optimized-panel [class*="py-4"],
+  .landscape-optimized-panel [class*="py-6"] {
+    padding-top: 0.1rem !important;
+    padding-bottom: 0.1rem !important;
+  }
+
+  .landscape-optimized-panel [class*="py-2"] {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
+  }
+
+  .landscape-optimized-info h2 {
+    font-size: clamp(0.8rem, 2vh, 1.1rem) !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  .landscape-optimized-info p {
+    font-size: clamp(0.6rem, 1.2vh, 0.75rem) !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .landscape-optimized-info [class*="text-2xl"] {
+    font-size: clamp(1.1rem, 3vh, 1.5rem) !important;
+  }
+
+  .landscape-optimized-header {
+    padding: 0.25rem 1rem !important;
+  }
+
+  .landscape-optimized-header h1 {
+    font-size: clamp(0.8rem, 2.5vh, 1.2rem) !important;
+  }
+
+  .landscape-optimized-header [class*="p-2"],
+  .landscape-optimized-header [class*="p-3"] {
+    padding: 0.4rem !important;
+  }
+
+  .landscape-optimized-header svg {
+    width: clamp(0.8rem, 2vh, 1rem) !important;
+    height: clamp(0.8rem, 2vh, 1rem) !important;
+  }
+
+  .landscape-optimized-interaction-hint {
+    transform: scale(0.75) !important;
+    opacity: 0.9 !important;
+  }
+
+  .landscape-optimized-selection-hint {
+    position: fixed !important;
+    left: 70% !important;
+    bottom: 1rem !important;
+    transform: translateX(-50%) !important;
+    z-index: 100 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    width: max-content !important;
+  }
+
+  .landscape-optimized-selection-hint > div:last-child {
+    font-size: 8px !important;
+    letter-spacing: 0.15em !important;
+    opacity: 0.5 !important;
+  }
+
+  .landscape-optimized-hint-line {
+    display: none !important;
+  }
+
+  .landscape-optimized-panel button > span[class*="ring-"] {
+    inset: -2px !important;
+    border: 1.5px solid #c4a484 !important;
+    --tw-ring-offset-width: 0px !important;
+    --tw-ring-width: 0px !important;
+    box-shadow: none !important;
+    border-radius: 4px !important;
+  }
+
+  .landscape-optimized-legend {
+    display: none !important;
+  }
+
+  .landscape-optimized-landing-container {
+    padding-top: 1rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  .landscape-optimized-landing-content {
+    gap: 0.4rem !important;
+  }
+
+  .landscape-optimized-landing-title {
+    font-size: clamp(1.8rem, 10vh, 2.5rem) !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .landscape-optimized-landing-subtitle {
+    display: block !important;
+    font-size: clamp(0.6rem, 2vh, 0.75rem) !important;
+    letter-spacing: 0.35em !important;
+    margin-top: 0.1rem !important;
+  }
+
+  .landscape-optimized-landing-hero {
+    font-size: clamp(1.2rem, 7vh, 2.1rem) !important;
+    margin-bottom: 0.5rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .landscape-optimized-landing-desc {
+    font-size: clamp(0.8rem, 3.8vh, 1.05rem) !important;
+    margin-bottom: 1rem !important;
+    max-width: 90% !important;
+    line-height: 1.3 !important;
+  }
+
+  .landscape-optimized-landing-btn {
+    padding: 0.45rem 1.4rem !important;
+    font-size: clamp(0.7rem, 2.8vh, 0.85rem) !important;
+    width: auto !important;
+  }
+}
+
