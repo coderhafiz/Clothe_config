@@ -45,20 +45,7 @@ const _worldYAxis = new THREE.Vector3(0, 1, 0);
 // Types
 // =======================
 
-export interface ConfigState {
-  mainColor: string;
-  accentColor: string;
-  cushionColor: string;
-  selectedModel: string;
-  lightIntensity: number;
-  partColors: Record<
-    string,
-    string
-  >;
-  selectedTexture: string;
-  selectedDecal: string;
-  ambientSpin: boolean;
-}
+import { ConfigState } from "@/store/useConfigStore";
 
 export const TEXTURES = [
   {
@@ -227,6 +214,9 @@ const TEXTURE_PATHS:
 
     aoMap:
       "/textures/linen/arm.ktx2",
+
+    specMap:
+      "/textures/linen/spec_ior.ktx2",
   },
 
   velvet: {
@@ -238,6 +228,9 @@ const TEXTURE_PATHS:
 
     aoMap:
       "/textures/velvet/arm.ktx2",
+
+    specMap:
+      "/textures/velvet/spec_ior.ktx2",
   },
 };
 
@@ -496,36 +489,27 @@ export function Model({
   // Texture Loading
   // =======================
 
-  const hasTexture =
-    config.selectedTexture !==
-    "none";
+  const activeTextureKeys = useMemo(() => {
+    const keys = new Set<string>();
+    Object.values(config.partTextures).forEach(v => {
+      if (v && v !== "none") keys.add(v);
+    });
+    return Array.from(keys);
+  }, [config.partTextures]);
 
-  const textureFiles =
-    useMemo(() => {
-      if (
-        !hasTexture
-      ) {
-        return [];
-      }
-
-      const p =
-        TEXTURE_PATHS[
-        config
-          .selectedTexture
-        ];
-
-      return [
-        p.map,
-        p.normalMap,
-        p.roughnessMap ||
-        p.aoMap,
-      ].filter(
-        Boolean
-      );
-    }, [
-      config.selectedTexture,
-      hasTexture,
-    ]);
+  const textureFiles = useMemo(() => {
+    const files: string[] = [];
+    activeTextureKeys.forEach(key => {
+      const p = TEXTURE_PATHS[key];
+        if (p) {
+          if (p.map) files.push(p.map);
+          if (p.normalMap) files.push(p.normalMap);
+          if (p.roughnessMap || p.aoMap) files.push(p.roughnessMap || p.aoMap);
+          if (p.specMap) files.push(p.specMap);
+        }
+    });
+    return files.filter(Boolean);
+  }, [activeTextureKeys]);
 
   const loadedTextures =
     useLoader(
@@ -845,22 +829,28 @@ export function Model({
 
   const partMaterialsRef = useRef<Record<string, any>>({});
 
-  useEffect(() => {
-    const map: Record<string, any> = {};
-    rotatableScene.traverse((child) => {
-      if ((child as any).isMesh) {
-        const mesh = child as Mesh;
-        if (
-          mesh.userData.partId &&
-          mesh.material &&
-          (mesh.material as any).isMaterial
-        ) {
-          map[mesh.userData.partId] = mesh.material;
+    useEffect(() => {
+      const map: Record<string, any> = {};
+      rotatableScene.traverse((child) => {
+        if ((child as any).isMesh) {
+          const mesh = child as Mesh;
+          if (
+            mesh.userData.partId &&
+            mesh.material &&
+            (mesh.material as any).isMaterial
+          ) {
+            if (!(mesh.material as any).isMeshPhysicalMaterial) {
+               const oldMat = mesh.material as THREE.MeshStandardMaterial;
+               const newMat = new THREE.MeshPhysicalMaterial();
+               THREE.MeshStandardMaterial.prototype.copy.call(newMat, oldMat);
+               mesh.material = newMat;
+            }
+            map[mesh.userData.partId] = mesh.material;
+          }
         }
-      }
-    });
-    partMaterialsRef.current = map;
-  }, [rotatableScene]);
+      });
+      partMaterialsRef.current = map;
+    }, [rotatableScene]);
 
 
 
@@ -888,60 +878,73 @@ export function Model({
 
   // Effect: Textures & Triplanar Shader
   useEffect(() => {
-    let map: THREE.Texture | null = null;
-    let normalMap: THREE.Texture | null = null;
-    let roughOrAo: THREE.Texture | null = null;
-
     const textures = Array.isArray(loadedTextures)
       ? loadedTextures
       : [loadedTextures];
 
-    if (hasTexture && textures.length) {
-      const p = TEXTURE_PATHS[config.selectedTexture];
-      let i = 0;
-      if (p.map) {
-        map = textures[i++];
-      }
-      if (p.normalMap) {
-        normalMap = textures[i++];
-      }
-      if (p.roughnessMap || p.aoMap) {
-        roughOrAo = textures[i++];
-      }
+    const textureMaps: Record<string, { map: THREE.Texture | null, normalMap: THREE.Texture | null, roughOrAo: THREE.Texture | null, specMap: THREE.Texture | null }> = {};
+    let currentIndex = 0;
 
-      [map, normalMap, roughOrAo].forEach((tex) => {
+    activeTextureKeys.forEach((key) => {
+      const p = TEXTURE_PATHS[key];
+      const maps = { map: null as any, normalMap: null as any, roughOrAo: null as any, specMap: null as any };
+      if (p) {
+        if (p.map) maps.map = textures[currentIndex++];
+        if (p.normalMap) maps.normalMap = textures[currentIndex++];
+        if (p.roughnessMap || p.aoMap) maps.roughOrAo = textures[currentIndex++];
+        if (p.specMap) maps.specMap = textures[currentIndex++];
+      }
+      [maps.map, maps.normalMap, maps.roughOrAo, maps.specMap].forEach((tex) => {
         if (tex) {
           tex.wrapS = RepeatWrapping;
           tex.wrapT = RepeatWrapping;
         }
       });
-    }
+      textureMaps[key] = maps;
+    });
 
-    Object.entries(partMaterialsRef.current).forEach(([, mat]) => {
+    Object.entries(partMaterialsRef.current).forEach(([name, mat]) => {
       if (!mat) return;
 
-      mat.roughness = config.selectedTexture === "leather" ? 0.4 : 0.8;
-      mat.metalness = config.selectedTexture === "leather" ? 0.1 : 0;
+      const partTexKey = config.partTextures[name] || "none";
+      const hasTex = partTexKey !== "none";
 
-      if (hasTexture) {
-        mat.map = map;
-        mat.normalMap = normalMap;
+      mat.roughness = partTexKey === "leather" ? 0.4 : 0.8;
+      mat.metalness = partTexKey === "leather" ? 0.1 : 0;
 
-        if (TEXTURE_PATHS[config.selectedTexture].roughnessMap) {
-          mat.roughnessMap = roughOrAo;
-          mat.aoMap = null;
+      if (hasTex && textureMaps[partTexKey]) {
+        const texMap = textureMaps[partTexKey];
+        if (partTexKey === "linen") {
+          mat.map = texMap.map;
         } else {
-          mat.aoMap = roughOrAo;
+          mat.map = null;
+        }
+        mat.normalMap = texMap.normalMap;
+
+        if (TEXTURE_PATHS[partTexKey].roughnessMap) {
+          mat.roughnessMap = texMap.roughOrAo;
+          mat.aoMap = null;
+          mat.metalnessMap = null;
+        } else if (partTexKey === "velvet") {
+          mat.roughnessMap = texMap.roughOrAo;
+          mat.aoMap = texMap.roughOrAo;
+          mat.metalnessMap = texMap.roughOrAo;
+        } else {
           mat.roughnessMap = null;
+          mat.aoMap = null;
+          mat.metalnessMap = null;
         }
 
+        (mat as THREE.MeshPhysicalMaterial).specularIntensityMap = null;
+        (mat as THREE.MeshPhysicalMaterial).specularIntensity = 0.0;
+
         // Optimization 7: prevent unnecessary shader recompilation
-        const needsShaderUpdate = mat.userData.lastTexture !== config.selectedTexture;
+        const needsShaderUpdate = mat.userData.lastTexture !== partTexKey;
         if (needsShaderUpdate) {
-          mat.userData.lastTexture = config.selectedTexture;
+          mat.userData.lastTexture = partTexKey;
           mat.onBeforeCompile = (shader: any) => {
             shader.uniforms.uTriScale = {
-              value: config.selectedTexture === "leather" ? 0.0006 : 0.001,
+              value: partTexKey === "leather" ? 0.0006 : 0.001,
             };
 
             shader.vertexShader = shader.vertexShader.replace(
@@ -984,15 +987,52 @@ vec4 tri(sampler2D tex, vec3 p, vec3 n) {
 `
             );
 
-            shader.fragmentShader = shader.fragmentShader.replace(
-              "#include <map_fragment>",
-              `
+            if (partTexKey === "linen") {
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <map_fragment>",
+                `
 #ifdef USE_MAP
 vec4 tex = tri(map, vWorldPos, vWorldNormal);
 diffuseColor.rgb *= tex.rgb;
 #endif
 `
+              );
+            }
+
+            shader.fragmentShader = shader.fragmentShader.replace(
+              "#include <normal_fragment_maps>",
+              THREE.ShaderChunk.normal_fragment_maps.replace(
+                "texture2D( normalMap, vNormalMapUv )",
+                "tri(normalMap, vWorldPos, vWorldNormal)"
+              )
             );
+
+            if (partTexKey === "leather" || partTexKey === "velvet") {
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <roughnessmap_fragment>",
+                THREE.ShaderChunk.roughnessmap_fragment.replace(
+                  "texture2D( roughnessMap, vRoughnessMapUv )",
+                  "tri(roughnessMap, vWorldPos, vWorldNormal)"
+                )
+              );
+            }
+
+            if (partTexKey === "velvet") {
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <aomap_fragment>",
+                THREE.ShaderChunk.aomap_fragment.replace(
+                  "texture2D( aoMap, vAoMapUv )",
+                  "tri(aoMap, vWorldPos, vWorldNormal)"
+                )
+              );
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <metalnessmap_fragment>",
+                THREE.ShaderChunk.metalnessmap_fragment.replace(
+                  "texture2D( metalnessMap, vMetalnessMapUv )",
+                  "tri(metalnessMap, vWorldPos, vWorldNormal)"
+                )
+              );
+            }
           };
           mat.needsUpdate = true;
         }
@@ -1001,6 +1041,8 @@ diffuseColor.rgb *= tex.rgb;
         mat.normalMap = null;
         mat.roughnessMap = null;
         mat.aoMap = null;
+        mat.metalnessMap = null;
+        (mat as THREE.MeshPhysicalMaterial).specularIntensityMap = null;
 
         const needsShaderUpdate = mat.userData.lastTexture !== "none";
         if (needsShaderUpdate) {
@@ -1012,9 +1054,9 @@ diffuseColor.rgb *= tex.rgb;
     });
   }, [
     rotatableScene,
-    config.selectedTexture,
+    config.partTextures,
+    activeTextureKeys,
     loadedTextures,
-    hasTexture,
   ]);// =======================
   // Reset Rotation
   // =======================

@@ -30,7 +30,8 @@ if (typeof window !== "undefined") {
     originalWarn(...args);
   };
 }
-import { Model, ConfigState, PreloadModels, PreloadTextures, MODELS, setupLoaders } from "./Model";
+import { Model, PreloadModels, PreloadTextures, MODELS, setupLoaders } from "./Model";
+import { ConfigState } from "@/store/useConfigStore";
 import { motion } from "framer-motion";
 
 // Force a resize event after mount to fix initial dimension calculations in CSS-scaled mobile simulators
@@ -75,7 +76,7 @@ function CanvasLoader({ hidden }: { hidden?: boolean }) {
   );
 }
 
-// DOF quality tiers — degraded progressively by PerformanceMonitor
+// DOF quality tiers ΓÇö degraded progressively by PerformanceMonitor
 type DofTier = "high" | "medium" | "off";
 
 function SceneContent({
@@ -288,7 +289,7 @@ function SceneContent({
         color="#000000"
       />
 
-      {/* Depth of Field — adaptive quality based on device performance */}
+      {/* Depth of Field ΓÇö adaptive quality based on device performance */}
       {dofTier !== "off" && (
         <EffectComposer multisampling={0}>
           <DepthOfField
@@ -312,7 +313,7 @@ export default function ConfiguratorCanvas({
   const isDragging = useRef(false);
   const previousPointer = useRef({ x: 0, y: 0 });
 
-  // Stable ref for isMobile — set once on mount, used in callbacks without
+  // Stable ref for isMobile ΓÇö set once on mount, used in callbacks without
   // causing re-renders or stale closure issues.
   const isMobileRef = useRef(false);
 
@@ -328,7 +329,7 @@ export default function ConfiguratorCanvas({
     dpr: [1, 2] as [number, number],
   });
 
-  // ── Mount detection ──────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Mount detection ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // Runs exactly ONCE when the user lands on the page (client-side only).
   // All browser APIs (window, navigator) are safe to call here.
   useEffect(() => {
@@ -354,9 +355,9 @@ export default function ConfiguratorCanvas({
     } else {
       setDofTier("high");  // full quality on capable desktop GPUs
     }
-  }, []); // [] → runs once, immediately after the component mounts
+  }, []); // [] ΓåÆ runs once, immediately after the component mounts
 
-  // ── PerformanceMonitor callbacks ─────────────────────────────────────────
+  // ΓöÇΓöÇ PerformanceMonitor callbacks ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // Step quality down/up based on live FPS measurements during the session.
   const handleDecline = useCallback(() => {
     setDofTier((prev) => {
@@ -375,7 +376,7 @@ export default function ConfiguratorCanvas({
     });
   }, []);
 
-  // ── Pointer handlers ─────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Pointer handlers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handlePointerDown = (e: React.PointerEvent) => {
     isDragging.current = true;
     previousPointer.current = { x: e.clientX, y: e.clientY };
@@ -422,7 +423,7 @@ export default function ConfiguratorCanvas({
           </>
         )}
 
-        {/* Adaptive performance monitor — steps DOF quality up/down based on FPS */}
+        {/* Adaptive performance monitor ΓÇö steps DOF quality up/down based on FPS */}
         <PerformanceMonitor
           onDecline={handleDecline}
           onIncline={handleIncline}

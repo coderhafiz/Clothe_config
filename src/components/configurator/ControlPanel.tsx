@@ -1,9 +1,7 @@
 "use client";
 
-import { MODELS, ConfigState } from "./Model";
+import { MODELS } from "./Model";
 import {
-  Dispatch,
-  SetStateAction,
   useMemo,
   useState,
   useCallback,
@@ -209,22 +207,24 @@ function ToggleRow({
   );
 }
 
+import { useConfigStore } from "@/store/useConfigStore";
+
 interface ControlPanelProps {
-  config: ConfigState;
-  setConfig: Dispatch<SetStateAction<ConfigState>>;
-  onModelChange: (id: string) => void;
   isCollapsed: boolean;
   setIsCollapsed: (v: boolean) => void;
   onShare: () => void;
 }
 
 export default function ControlPanel({
-  config,
-  setConfig,
   isCollapsed,
   setIsCollapsed,
   onShare,
 }: ControlPanelProps) {
+  const config = useConfigStore((state) => state.config);
+  const updateConfig = useConfigStore((state) => state.updateConfig);
+  const updatePartColors = useConfigStore((state) => state.updatePartColors);
+  const updatePartTextures = useConfigStore((state) => state.updatePartTextures);
+
   const selectedModelInfo = useMemo(
     () => MODELS.find((m) => m.id === config.selectedModel) || MODELS[0],
     [config.selectedModel],
@@ -253,15 +253,14 @@ export default function ControlPanel({
 
   /** Set the same colour on every part ID in a group. */
   const setGroupColor = useCallback(
-    (ids: string[], hex: string) =>
-      setConfig((prev) => {
-        const next = { ...prev.partColors };
-        ids.forEach((id) => {
-          next[id] = hex;
-        });
-        return { ...prev, partColors: next };
-      }),
-    [setConfig],
+    (ids: string[], hex: string) => {
+      const colorsToUpdate: Record<string, string> = {};
+      ids.forEach((id) => {
+        colorsToUpdate[id] = hex;
+      });
+      updatePartColors(colorsToUpdate);
+    },
+    [updatePartColors],
   );
 
   /** Colour to show for a group: uses first part's stored colour, or default. */
@@ -284,12 +283,12 @@ export default function ControlPanel({
           min={0}
           max={10}
           step={0.1}
-          onChange={(v) => setConfig((p) => ({ ...p, lightIntensity: v }))}
+          onChange={(v) => updateConfig({ lightIntensity: v as number })}
         />
         <ToggleRow
           label="Ambient Spin"
           value={config.ambientSpin}
-          onChange={(v) => setConfig((p) => ({ ...p, ambientSpin: v }))}
+          onChange={(v) => updateConfig({ ambientSpin: v as boolean })}
         />
       </Folder>
 
@@ -299,20 +298,31 @@ export default function ControlPanel({
         title="Fabric Finish"
         defaultOpen={!isLandscape}
       >
-        <SelectRow
-          label="Material Texture"
-          value={config.selectedTexture}
-          options={TEXTURE_OPTIONS}
-          onChange={(v) => startTransition(() => setConfig((p) => ({ ...p, selectedTexture: v })))}
-        />
-        <div className="flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row">
+        <div className="flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row border-b border-white/5 mb-1">
           <span className="text-[9px] sm:text-sm font-semibold text-text-main truncate">
-            Base Finish
+            Base Model Type
           </span>
           <span className="text-[9px] sm:text-sm font-medium text-text-muted">
             {selectedModelInfo.materialType}
           </span>
         </div>
+        {partGroups.map(([label, ids]) => (
+          <SelectRow
+            key={`tex-${label}`}
+            label={label}
+            value={config.partTextures[ids[0]] || "none"}
+            options={TEXTURE_OPTIONS}
+            onChange={(v) =>
+              startTransition(() => {
+                const texturesToUpdate: Record<string, string> = {};
+                ids.forEach((id) => {
+                  texturesToUpdate[id] = v as string;
+                });
+                updatePartTextures(texturesToUpdate);
+              })
+            }
+          />
+        ))}
       </Folder>
 
       {/* ── Decals (T-Shirt Only) ── */}
@@ -326,7 +336,7 @@ export default function ControlPanel({
             label="Graphic Decal"
             value={config.selectedDecal}
             options={DECAL_OPTIONS}
-            onChange={(v) => startTransition(() => setConfig((p) => ({ ...p, selectedDecal: v })))}
+            onChange={(v) => startTransition(() => updateConfig({ selectedDecal: v as string }))}
           />
         </Folder>
       )}
