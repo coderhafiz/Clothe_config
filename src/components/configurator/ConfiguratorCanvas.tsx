@@ -334,7 +334,7 @@ function SceneContent({
 
       {/* Depth of Field — adaptive quality based on device performance */}
       {dofTier !== "off" && (
-        <EffectComposer multisampling={3}>
+        <EffectComposer multisampling={1}>
           <DepthOfField
             focusDistance={focusDistance}
             focalLength={0.4}
