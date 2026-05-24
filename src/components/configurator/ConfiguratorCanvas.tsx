@@ -132,6 +132,28 @@ function SceneContent({
     return center;
   }, [gltf]);
 
+  const boundingBoxMaxY = useMemo(() => {
+    if (!gltf) return 0;
+    const box = new THREE_CORE.Box3();
+    let hasObjects = false;
+    gltf.scene.traverse((child) => {
+      if (
+        (child as any).isMesh &&
+        (child.name === "T-shirt_mainbody" ||
+          child.name === "T-shirt_sleeves" ||
+          child.name === "Model")
+      ) {
+        child.updateMatrixWorld(true);
+        box.union(new THREE_CORE.Box3().setFromObject(child));
+        hasObjects = true;
+      }
+    });
+    if (!hasObjects) {
+      box.setFromObject(gltf.scene);
+    }
+    return box.max.y;
+  }, [gltf]);
+
   const targetPos = useRef(new THREE_CORE.Vector3(0.2587, 0.0728, -0.2320));
   const targetFoc = useRef(new THREE_CORE.Vector3(-0.6187, -0.1667, -0.3149));
   const isAutoFraming = useRef(true);
@@ -212,10 +234,16 @@ function SceneContent({
     return lights;
   }, [gltf]);
 
+  const dirLightRef = useRef<THREE_CORE.RectAreaLight>(null!);
   const ambientLightRef = useRef<THREE_CORE.AmbientLight>(null!);
   const areaLightRefs = useRef<Record<string, THREE_CORE.RectAreaLight>>({});
 
   useFrame((state, delta) => {
+    // Smoothly damp overhead softbox intensity
+    if (dirLightRef.current) {
+      easing.damp(dirLightRef.current, "intensity", config.lightIntensity * 2.0, 0.2, delta);
+    }
+
     // Smoothly damp ambient light intensity
     if (ambientLightRef.current) {
       easing.damp(
@@ -248,12 +276,25 @@ function SceneContent({
         files="/hdri/brown_photostudio_01_1k.exr"
         blur={1}
         background={false}
-        environmentIntensity={2 * (config.lightIntensity / 5)}
+        environmentIntensity={1 * (config.lightIntensity / 5)}
       />
 
       <ambientLight
         ref={ambientLightRef}
         intensity={1 * (config.lightIntensity / 5)}
+      />
+
+      {/* Render soft overhead studio light (RectAreaLight) directly over the model bounding box */}
+      <rectAreaLight
+        ref={dirLightRef}
+        position={[combinedCenter.x, boundingBoxMaxY + 2.0, combinedCenter.z]}
+        width={4}
+        height={4}
+        intensity={config.lightIntensity * 2.0}
+        color="#ffebd6"
+        onUpdate={(self) => {
+          self.lookAt(combinedCenter);
+        }}
       />
 
       {/* Render extracted Blender area lights static in world space */}
