@@ -9,6 +9,8 @@ export interface ConfigState {
   lightIntensity: number;
   partColors: Record<string, string>;
   partTextures: Record<string, string>;
+  trouserTexture: string;
+  trouserColor: string;
   selectedDecal: string;
   ambientSpin: boolean;
 }
@@ -21,6 +23,8 @@ export const baseConfig: ConfigState = {
   lightIntensity: 2.0,
   partColors: {},
   partTextures: {},
+  trouserTexture: "jeans",
+  trouserColor: "#f5f5f7",
   selectedDecal: "luxi",
   ambientSpin: true,
 };

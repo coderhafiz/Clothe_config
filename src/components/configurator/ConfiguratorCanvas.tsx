@@ -1,12 +1,14 @@
 "use client";
 
-import React, { Suspense, useEffect, useRef, useMemo, useState, useCallback } from "react";
+import React, { Suspense, useEffect, useRef, useMemo, useState, 
+  // useCallback
+ } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import {
   Environment,
   ContactShadows,
   PerspectiveCamera,
-  PerformanceMonitor,
+  // PerformanceMonitor,
   Html,
   useGLTF,
 } from "@react-three/drei";
@@ -330,13 +332,13 @@ function SceneContent({
         color="#000000"
       />
 
-      {/* Depth of Field ΓÇö adaptive quality based on device performance */}
+      {/* Depth of Field — adaptive quality based on device performance */}
       {dofTier !== "off" && (
         <EffectComposer multisampling={0}>
           <DepthOfField
             focusDistance={focusDistance}
-            focalLength={dofTier === "high" ? 0.5 : 0.4}
-            bokehScale={dofTier === "high" ? 3 : 1.5}
+            focalLength={dofTier === "high" ? 0.4 : 0.4}
+            bokehScale={1}
             height={dofTier === "high" ? 480 : 240}
           />
         </EffectComposer>
@@ -377,9 +379,9 @@ export default function ConfiguratorCanvas({
     const mobile =
       window.innerWidth < 768 || navigator.maxTouchPoints > 0;
 
-    const lowRAM =
-      (navigator as any).deviceMemory !== undefined &&
-      (navigator as any).deviceMemory < 4;
+    // const lowRAM =
+    //   (navigator as any).deviceMemory !== undefined &&
+    //   (navigator as any).deviceMemory < 4;
 
     isMobileRef.current = mobile;
 
@@ -391,31 +393,34 @@ export default function ConfiguratorCanvas({
     });
 
     // Set the initial DOF tier based on device capabilities
+    /*
     if (mobile || lowRAM) {
       setDofTier("off");   // never run post-processing on weak/mobile devices
     } else {
       setDofTier("high");  // full quality on capable desktop GPUs
     }
+    */
+    setDofTier("high");
   }, []); // [] ΓåÆ runs once, immediately after the component mounts
 
   // ΓöÇΓöÇ PerformanceMonitor callbacks ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // Step quality down/up based on live FPS measurements during the session.
-  const handleDecline = useCallback(() => {
-    setDofTier((prev) => {
-      if (prev === "high") return "medium";
-      if (prev === "medium") return "off";
-      return "off";
-    });
-  }, []);
+  // const handleDecline = useCallback(() => {
+  //   setDofTier((prev) => {
+  //     if (prev === "high") return "medium";
+  //     if (prev === "medium") return "off";
+  //     return "off";
+  //   });
+  // }, []);
 
-  const handleIncline = useCallback(() => {
-    setDofTier((prev) => {
-      // Recover one tier at a time; mobile devices are permanently capped at "off"
-      if (prev === "off" && !isMobileRef.current) return "medium";
-      if (prev === "medium" && !isMobileRef.current) return "high";
-      return prev;
-    });
-  }, []);
+  // const handleIncline = useCallback(() => {
+  //   setDofTier((prev) => {
+  //     // Recover one tier at a time; mobile devices are permanently capped at "off"
+  //     if (prev === "off" && !isMobileRef.current) return "medium";
+  //     if (prev === "medium" && !isMobileRef.current) return "high";
+  //     return prev;
+  //   });
+  // }, []);
 
   // ΓöÇΓöÇ Pointer handlers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -464,13 +469,15 @@ export default function ConfiguratorCanvas({
           </>
         )}
 
-        {/* Adaptive performance monitor ΓÇö steps DOF quality up/down based on FPS */}
+        {/* Adaptive performance monitor — steps DOF quality up/down based on FPS */}
+        {/*
         <PerformanceMonitor
           onDecline={handleDecline}
           onIncline={handleIncline}
           flipflops={3}
           threshold={0.9}
         />
+        */}
 
         <Suspense fallback={null}>
           <PerspectiveCamera

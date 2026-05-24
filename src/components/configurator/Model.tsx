@@ -229,6 +229,24 @@ const TEXTURE_PATHS:
     roughnessMap:
       "/textures/wooden_wall/roughness.ktx2",
   },
+  
+  jeans: {
+    map: "/textures/jeans/diffuse.ktx2",
+    normalMap: "/textures/jeans/normal.ktx2",
+    roughnessMap: "/textures/jeans/roughness.ktx2",
+  },
+  
+  fabric: {
+    map: "/textures/fabric/diffuse.ktx2",
+    normalMap: "/textures/fabric/normal.ktx2",
+    roughnessMap: "/textures/fabric/roughness.ktx2",
+  },
+
+  plastic: {
+    map: "/textures/Plastic/diffuse.ktx2",
+    normalMap: "/textures/Plastic/normal.ktx2",
+    roughnessMap: "/textures/Plastic/roughness.ktx2",
+  },
 
   velvet: {
     map:
@@ -589,15 +607,15 @@ export function Model({
       // Upgrade Premium Materials
       //---------------------------------
 
-      const premiumMeshes = [
-        "60.006", "190.002", "181.002", "60.008",
-        "60.009", "60.007"
-      ];
+      const shelfIds = ["_id60", "_id66", "_id72"];
+      const poleIds = ["_id154", "_id156", "_id180", "_id181", "_id190"];
+      const premiumMeshes = [...shelfIds, ...poleIds];
+
       root.traverse((child) => {
         if ((child as any).isMesh && premiumMeshes.some(id => child.name.includes(id))) {
           const mesh = child as THREE.Mesh;
           const oldMat = mesh.material as THREE.MeshStandardMaterial;
-          const newMat = new THREE.MeshPhysicalMaterial({
+          const newMat = new THREE.MeshStandardMaterial({
             color: oldMat.color,
             map: oldMat.map,
             normalMap: oldMat.normalMap,
@@ -605,10 +623,10 @@ export function Model({
             metalnessMap: oldMat.metalnessMap,
           });
           
-          newMat.clearcoat = 1.0;
-          newMat.clearcoatRoughness = 1;
-          
-          if (mesh.name.includes("190.002") || mesh.name.includes("60.009") || mesh.name.includes("60.007")) {
+          const isPole = poleIds.some(id => mesh.name.includes(id));
+          const isMetallicSpot = mesh.name.includes("60.009") || mesh.name.includes("60.007");
+
+          if (isPole || isMetallicSpot) {
             // Metallic pieces (poles and spots)
             newMat.metalness = 1.0;
             newMat.roughness = 0.15;
@@ -617,8 +635,7 @@ export function Model({
             // Painted wood / acrylic shelves
             newMat.metalness = 0.1;
             newMat.roughness = 0;
-            newMat.color.set("red"); // Ensure chrome reflects pure environment
-
+            newMat.color.set("#5C4033");
           }
           
           mesh.material = newMat;
@@ -1117,26 +1134,23 @@ diffuseColor.rgb *= tex.rgb;
           const mesh = child as THREE.Mesh;
           if (!mesh.material || !(mesh.material as any).isMaterial) return;
 
-          // Upgrade to Physical Material if it's not already
-          if ((mesh.material as any).type !== "MeshPhysicalMaterial") {
-            mesh.material = new THREE.MeshPhysicalMaterial({
-              color: (mesh.material as THREE.MeshStandardMaterial).color,
+          // Ensure it's a Standard Material
+          if ((mesh.material as any).type !== "MeshStandardMaterial") {
+            mesh.material = new THREE.MeshStandardMaterial({
+              color: (mesh.material as THREE.Material & { color?: THREE.Color }).color,
             });
           }
 
-          const mat = mesh.material as THREE.MeshPhysicalMaterial;
+          const mat = mesh.material as THREE.MeshStandardMaterial;
           const texMap = textureMaps["wooden_wall"];
 
           mat.map = texMap.map;
           mat.roughnessMap = texMap.roughOrAo;
           // Normal map re-enabled using artificial TBN
           mat.normalMap = texMap.normalMap;
-          mat.normalMap = texMap.normalMap;
           mat.roughness = 0.9;
-          mat.metalness = 0.5;
-          mat.clearcoat = 0.2;
-          mat.clearcoatRoughness = 0;
-          // mat.color.set("lightgray");
+          mat.metalness = 0;
+          // mat.color.set(0xffffff); // Ensure we don't tint the natural wood tone
 
           const needsShaderUpdate = mat.userData.lastTexture !== "wooden_wall";
           if (needsShaderUpdate) {
@@ -1231,10 +1245,246 @@ diffuseColor.rgb *= tex.rgb;
         }
       });
     }
+    
+    if (rotatableScene && textureMaps["linen"]) {
+      rotatableScene.traverse((child) => {
+        if ((child as any).isMesh && (child.name === "Trousers_backPanel" || child.name === "Trouser_frontPanel")) {
+          const mesh = child as THREE.Mesh;
+          if ((mesh.material as any).type !== "MeshPhysicalMaterial") {
+            mesh.material = new THREE.MeshPhysicalMaterial({
+              color: (mesh.material as THREE.Material & { color?: THREE.Color }).color,
+            });
+          }
+          const mat = mesh.material as THREE.MeshPhysicalMaterial;
+          
+          const texMap = textureMaps["linen"];
+          mat.map = texMap.map;
+          mat.roughnessMap = texMap.roughOrAo;
+          mat.normalMap = texMap.normalMap;
+          mat.roughness = 1;
+          mat.metalness = 0.0;
+
+          const needsShaderUpdate = mat.userData.lastTexture !== "linen_trousers";
+          if (needsShaderUpdate) {
+            mat.userData.lastTexture = "linen_trousers";
+            mat.onBeforeCompile = (shader: any) => {
+              shader.uniforms.uTriScale = {
+                value: 2, // Increased scale for linen trousers
+              };
+
+              shader.vertexShader = shader.vertexShader.replace(
+                "#include <common>",
+                `
+  #include <common>
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+  `
+              );
+
+              shader.vertexShader = shader.vertexShader.replace(
+                "#include <worldpos_vertex>",
+                `
+  #include <worldpos_vertex>
+  vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+  vWorldNormal = normalize((modelMatrix * vec4(objectNormal, 0.0)).xyz);
+  `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <common>",
+                `
+  #include <common>
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+  uniform float uTriScale;
+
+  vec4 tri(sampler2D tex, vec3 p, vec3 n) {
+    vec3 b = abs(normalize(n));
+    b /= (b.x + b.y + b.z);
+    vec4 x = texture2D(tex, p.zy * uTriScale);
+    vec4 y = texture2D(tex, p.zx * uTriScale);
+    vec4 z = texture2D(tex, p.yx * uTriScale);
+    return x * b.x + y * b.y + z * b.z;
+  }
+  `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <map_fragment>",
+                `
+  #ifdef USE_MAP
+    vec4 texelColor = tri(map, vWorldPos, vWorldNormal);
+    texelColor = sRGBTransferEOTF(texelColor);
+    diffuseColor.rgb *= texelColor.rgb;
+  #endif
+  `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <normal_fragment_maps>",
+                `
+  #ifdef USE_NORMALMAP
+    vec3 tnormal = tri(normalMap, vWorldPos, vWorldNormal).xyz * 2.0 - 1.0;
+    tnormal.xy *= normalScale;
+
+    // Construct artificial world-space TBN using geometry normal
+    vec3 wNormal = normalize(vWorldNormal);
+    vec3 wUp = abs(wNormal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 wTangent = normalize(cross(wUp, wNormal));
+    vec3 wBitangent = cross(wNormal, wTangent);
+    mat3 wTBN = mat3(wTangent, wBitangent, wNormal);
+    
+    vec3 perturbedWorldNormal = normalize(wTBN * tnormal);
+    
+    // Convert to view space for Three.js lighting calculations
+    normal = normalize(mat3(viewMatrix) * perturbedWorldNormal);
+  #endif
+                `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <roughnessmap_fragment>",
+                `
+  float roughnessFactor = roughness;
+  #ifdef USE_ROUGHNESSMAP
+    vec4 texelRoughness = tri(roughnessMap, vWorldPos, vWorldNormal);
+    roughnessFactor *= texelRoughness.g;
+  #endif
+  `
+              );
+            };
+          }
+          mat.color.set(0x1a1a1a); // Very dark, near black
+        }
+      });
+    }
+
+    if (staticScene && textureMaps["plastic"]) {
+      const shelfIds = ["_id60", "_id66", "_id72"];
+      const rackMeshes = [...shelfIds]; // Removed poleIds to keep their original metal textures
+      staticScene.traverse((child) => {
+        if ((child as any).isMesh && rackMeshes.some(id => child.name.includes(id))) {
+          const mesh = child as THREE.Mesh;
+          const origNormalMap = (mesh.material as THREE.MeshStandardMaterial).normalMap;
+          if ((mesh.material as any).type !== "MeshPhysicalMaterial") {
+            mesh.material = new THREE.MeshPhysicalMaterial({
+              color: (mesh.material as THREE.Material & { color?: THREE.Color }).color,
+            });
+            (mesh.material as THREE.MeshPhysicalMaterial).normalMap = origNormalMap;
+          }
+          const mat = mesh.material as THREE.MeshPhysicalMaterial;
+          const texMap = textureMaps["plastic"];
+          
+          // Apply texture
+          mat.map = null;
+          mat.roughnessMap = texMap.roughOrAo;
+          mat.normalMap = texMap.normalMap;
+          mat.color.set("black");
+          mat.clearcoat = 1.0;
+          mat.clearcoatRoughness = 0.2;
+          mat.metalness = 0.1;
+          mat.roughness = 0.3;
+
+          const needsShaderUpdate = mat.userData.lastTexture !== "plastic_rack";
+          if (needsShaderUpdate) {
+            mat.userData.lastTexture = "plastic_rack";
+            mat.onBeforeCompile = (shader: any) => {
+              shader.uniforms.uTriScale = {
+                value: 1, // Scale for plastic
+              };
+
+              shader.vertexShader = shader.vertexShader.replace(
+                "#include <common>",
+                `
+  #include <common>
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+  `
+              );
+
+              shader.vertexShader = shader.vertexShader.replace(
+                "#include <worldpos_vertex>",
+                `
+  #include <worldpos_vertex>
+  vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+  vWorldNormal = normalize((modelMatrix * vec4(objectNormal, 0.0)).xyz);
+  `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <common>",
+                `
+  #include <common>
+  varying vec3 vWorldPos;
+  varying vec3 vWorldNormal;
+  uniform float uTriScale;
+
+  vec4 tri(sampler2D tex, vec3 p, vec3 n) {
+    vec3 b = abs(normalize(n));
+    b /= (b.x + b.y + b.z);
+    vec4 x = texture2D(tex, p.zy * uTriScale);
+    vec4 y = texture2D(tex, p.zx * uTriScale);
+    vec4 z = texture2D(tex, p.yx * uTriScale);
+    return x * b.x + y * b.y + z * b.z;
+  }
+  `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <map_fragment>",
+                `
+  #ifdef USE_MAP
+    vec4 texelColor = tri(map, vWorldPos, vWorldNormal);
+    texelColor = sRGBTransferEOTF(texelColor);
+    diffuseColor.rgb *= texelColor.rgb;
+  #endif
+  `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <normal_fragment_maps>",
+                `
+  #ifdef USE_NORMALMAP
+    vec3 tnormal = tri(normalMap, vWorldPos, vWorldNormal).xyz * 2.0 - 1.0;
+    tnormal.xy *= normalScale;
+
+    // Construct artificial world-space TBN using geometry normal
+    vec3 wNormal = normalize(vWorldNormal);
+    vec3 wUp = abs(wNormal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 wTangent = normalize(cross(wUp, wNormal));
+    vec3 wBitangent = cross(wNormal, wTangent);
+    mat3 wTBN = mat3(wTangent, wBitangent, wNormal);
+    
+    vec3 perturbedWorldNormal = normalize(wTBN * tnormal);
+    
+    // Convert to view space for Three.js lighting calculations
+    normal = normalize(mat3(viewMatrix) * perturbedWorldNormal);
+  #endif
+                `
+              );
+
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <roughnessmap_fragment>",
+                `
+  float roughnessFactor = roughness;
+  #ifdef USE_ROUGHNESSMAP
+    vec4 texelRoughness = tri(roughnessMap, vWorldPos, vWorldNormal);
+    roughnessFactor *= texelRoughness.g;
+  #endif
+  `
+              );
+            };
+            mat.needsUpdate = true;
+          }
+        }
+      });
+    }
   }, [
     staticScene,
     rotatableScene,
     config.partTextures,
+    config.trouserTexture,
+    config.trouserColor,
     loadedTextures,
   ]);// =======================
   // Reset Rotation

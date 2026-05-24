@@ -323,7 +323,7 @@ export default function ControlPanel({
             }
           />
         ))}
-      </Folder>
+        </Folder>
 
       {/* ── Decals (T-Shirt Only) ── */}
       {config.selectedModel === "shirt" && (
@@ -382,8 +382,8 @@ export default function ControlPanel({
               </div>
             );
           })}
-
-          {/* Legend */}
+          
+            {/* Legend */}
           <div className="flex flex-wrap gap-x-1.5 sm:gap-x-2 gap-y-0.5 sm:gap-y-1 px-1.5 sm:px-4 pt-2 sm:pt-3 landscape-optimized-legend">
             {PALETTE.map((c) => (
               <span
