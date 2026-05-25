@@ -413,7 +413,7 @@ export default function ControlPanel({
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 20, scale: 0.8 }}
             onClick={() => setIsCollapsed(false)}
-            className="fixed right-4 top-4 sm:top-auto sm:bottom-6 z-40 p-4 bg-black text-brand-primary border border-glass-border rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+            className="fixed right-4 top-4 sm:right-8 sm:top-8 z-40 p-4 bg-black text-brand-primary border border-glass-border rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-transform cursor-pointer"
           >
             <Sliders className="w-5 h-5" />
           </motion.button>

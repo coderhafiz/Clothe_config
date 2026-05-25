@@ -18,6 +18,7 @@ import {
 import { easing } from "maath";
 
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three-stdlib";
 
 import {
   Mesh,
@@ -1376,21 +1377,50 @@ diffuseColor.rgb *= tex.rgb;
           const texMap = textureMaps["plastic"];
           
           // Apply texture
-          mat.map = null;
-          mat.roughnessMap = texMap.roughOrAo;
-          mat.normalMap = texMap.normalMap;
-          mat.color.set("black");
-          mat.clearcoat = 1.0;
-          mat.clearcoatRoughness = 0.2;
-          mat.metalness = 0.1;
-          mat.roughness = 0.3;
+          // Replace geometry with rounded box for bevels
+          if (!mesh.userData.hasRoundedGeo && mesh.geometry) {
+            mesh.geometry.computeBoundingBox();
+            if (mesh.geometry.boundingBox) {
+              const bbox = mesh.geometry.boundingBox;
+              const size = new THREE.Vector3();
+              bbox.getSize(size);
+              const center = new THREE.Vector3();
+              bbox.getCenter(center);
+              
+              // Create beveled box (1.5cm radius, 4 segments)
+              const roundedGeo = new RoundedBoxGeometry(size.x, size.y, size.z, 10, 1.5);
+              roundedGeo.translate(center.x, center.y, center.z);
+              
+              // We must dispose the old geometry to prevent memory leaks
+              mesh.geometry.dispose();
+              mesh.geometry = roundedGeo;
+              mesh.userData.hasRoundedGeo = true;
+            }
+          }
 
-          const needsShaderUpdate = mat.userData.lastTexture !== "plastic_rack";
+          // Apply textures
+          mat.map = texMap.map;
+          mat.roughnessMap = texMap.roughOrAo;
+          // mat.normalMap = texMap.normalMap;
+          // mat.color.set("white");
+          
+          // Ensure textures can tile infinitely for the tri-planar shader
+          if (!mat.userData.scaledTex) {
+            [mat.map, mat.roughnessMap, mat.normalMap].forEach(t => {
+              if (t) {
+                t.wrapS = THREE.RepeatWrapping;
+                t.wrapT = THREE.RepeatWrapping;
+              }
+            });
+            mat.userData.scaledTex = true;
+          }
+
+          const needsShaderUpdate = mat.userData.lastTexture !== "plastic_rack_tri";
           if (needsShaderUpdate) {
-            mat.userData.lastTexture = "plastic_rack";
+            mat.userData.lastTexture = "plastic_rack_tri";
             mat.onBeforeCompile = (shader: any) => {
               shader.uniforms.uTriScale = {
-                value: 1, // Scale for plastic
+                value: 1,
               };
 
               shader.vertexShader = shader.vertexShader.replace(
@@ -1406,8 +1436,8 @@ diffuseColor.rgb *= tex.rgb;
                 "#include <worldpos_vertex>",
                 `
   #include <worldpos_vertex>
-  vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
-  vWorldNormal = normalize((modelMatrix * vec4(objectNormal, 0.0)).xyz);
+  vWorldPos = transformed; // Use local coordinates
+  vWorldNormal = normalize(objectNormal); // Use local normals
   `
               );
 
@@ -1446,9 +1476,9 @@ diffuseColor.rgb *= tex.rgb;
                 `
   #ifdef USE_NORMALMAP
     vec3 tnormal = tri(normalMap, vWorldPos, vWorldNormal).xyz * 2.0 - 1.0;
-    tnormal.xy *= normalScale;
+    tnormal.xy *= 0.3 * normalScale.xy; // Soften the normal map to look natural
 
-    // Construct artificial world-space TBN using geometry normal
+    // Construct artificial world-space TBN
     vec3 wNormal = normalize(vWorldNormal);
     vec3 wUp = abs(wNormal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
     vec3 wTangent = normalize(cross(wUp, wNormal));
@@ -1457,7 +1487,7 @@ diffuseColor.rgb *= tex.rgb;
     
     vec3 perturbedWorldNormal = normalize(wTBN * tnormal);
     
-    // Convert to view space for Three.js lighting calculations
+    // Convert to view space
     normal = normalize(mat3(viewMatrix) * perturbedWorldNormal);
   #endif
                 `

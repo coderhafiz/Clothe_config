@@ -338,7 +338,7 @@ function SceneContent({
           <DepthOfField
             focusDistance={focusDistance}
             focalLength={0.4}
-            bokehScale={2}
+            bokehScale={1.5}
             height={1000}
           />
         </EffectComposer>
