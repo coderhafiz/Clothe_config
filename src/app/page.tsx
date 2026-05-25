@@ -199,14 +199,23 @@ export default function Home() {
           </motion.h1>
         </div>
 
-        <header className="hidden sm:flex absolute top-0 left-0 p-4 lg:p-8 items-center z-50 pointer-events-none bg-transparent border-none landscape-optimized-header">
+        <header 
+          className="absolute top-0 right-0 h-full w-1/2 sm:w-[420px] flex flex-col items-center justify-start z-40 pointer-events-none bg-transparent border-none px-2 sm:px-8"
+          style={{ paddingTop: "18vh" }}
+        >
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
             className="pointer-events-auto"
+            style={{ width: "100%" }}
           >
-            <h1 className="text-xl lg:text-2xl font-black tracking-tighter flex items-center gap-2">
-              <span className="bg-black text-white px-2 py-0.5 rounded flex items-center">LUXI</span> <span className="text-brand-primary">WEAR</span>
+            <h1 
+              className="font-black tracking-tighter flex flex-col items-center gap-1 sm:gap-2 leading-[0.85] w-full"
+              style={{ fontSize: "clamp(3.5rem, 16vw, 6rem)" }}
+            >
+              <span className="bg-black text-white px-2 py-1 sm:px-4 sm:py-2 rounded flex justify-center items-center shadow-2xl w-[90%] sm:w-auto">LUXI</span> 
+              <span className="text-brand-primary drop-shadow-lg text-center">WEAR</span>
             </h1>
           </motion.div>
         </header>
