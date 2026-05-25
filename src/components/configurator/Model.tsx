@@ -231,15 +231,15 @@ const TEXTURE_PATHS:
   },
   
   jeans: {
-    map: "/textures/jeans/diffuse.ktx2",
-    normalMap: "/textures/jeans/normal.ktx2",
-    roughnessMap: "/textures/jeans/roughness.ktx2",
+    map: "/textures/Jeans/diffuse.ktx2",
+    normalMap: "/textures/Jeans/normal.ktx2",
+    roughnessMap: "/textures/Jeans/roughness.ktx2",
   },
   
   fabric: {
-    map: "/textures/fabric/diffuse.ktx2",
-    normalMap: "/textures/fabric/normal.ktx2",
-    roughnessMap: "/textures/fabric/roughness.ktx2",
+    map: "/textures/Fabric/diffuse.ktx2",
+    normalMap: "/textures/Fabric/normal.ktx2",
+    roughnessMap: "/textures/Fabric/roughness.ktx2",
   },
 
   plastic: {
