@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import ConfiguratorCanvas from "@/components/configurator/ConfiguratorCanvas";
+import dynamic from "next/dynamic";
+const ConfiguratorCanvas = dynamic(() => import("@/components/configurator/ConfiguratorCanvas"), { ssr: false });
 import ControlPanel from "@/components/configurator/ControlPanel";
 import LandingOverlay from "@/components/ui/LandingOverlay";
 import Loader from "@/components/ui/Loader";
