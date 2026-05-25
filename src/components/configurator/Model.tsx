@@ -985,7 +985,7 @@ export function Model({
       const partTexKey = config.partTextures[name] || "none";
       const hasTex = partTexKey !== "none";
 
-      mat.roughness = partTexKey === "leather" ? 0.4 : 0.8;
+      mat.roughness = partTexKey === "leather" ? 1 : 0.8;
       mat.metalness = partTexKey === "leather" ? 0.1 : 0;
 
       if (hasTex && textureMaps[partTexKey]) {
