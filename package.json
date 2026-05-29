@@ -11,6 +11,7 @@
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@react-three/gpu-pathtracer": "^0.3.2",
     "@react-three/offscreen": "^0.0.8",
     "@react-three/postprocessing": "^3.0.4",
     "framer-motion": "^12.38.0",
@@ -21,6 +22,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "three": "^0.184.0",
+    "three-gpu-pathtracer": "^0.0.24",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

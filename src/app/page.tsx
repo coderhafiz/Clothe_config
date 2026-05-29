@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
-const ConfiguratorCanvas = dynamic(() => import("@/components/configurator/ConfiguratorCanvas"), { ssr: false });
+const ConfiguratorCanvas = dynamic(
+  () => import("@/components/configurator/ConfiguratorCanvas"),
+  { ssr: false },
+);
 import ControlPanel from "@/components/configurator/ControlPanel";
 import LandingOverlay from "@/components/ui/LandingOverlay";
 import Loader from "@/components/ui/Loader";
@@ -25,8 +28,11 @@ export default function Home() {
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
+  // Stable callback — wrapped in useCallback so ConfiguratorCanvas's mount useEffect
+  // doesn't re-run if the parent re-renders before the canvas has mounted.
+  const handleCanvasLoaded = useCallback(() => setIsLoaded(true), []);
   const [isCollapsed, setIsCollapsed] = useState(
-    () => typeof window !== "undefined" && window.innerWidth < 640
+    () => typeof window !== "undefined" && window.innerWidth < 640,
   );
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
   const [shouldEagerLoad, setShouldEagerLoad] = useState(false);
@@ -36,7 +42,9 @@ export default function Home() {
 
     // Check for Safari or iOS to prevent heavy background WebGL initialization
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
     if (!(isSafari || isIOS)) {
       // Use a timeout to avoid React "cascading render" warnings and hydration mismatches
@@ -46,7 +54,7 @@ export default function Home() {
 
     const check = () =>
       setIsMobileLandscape(
-        window.innerWidth > window.innerHeight && window.innerHeight < 700
+        window.innerWidth > window.innerHeight && window.innerHeight < 700,
       );
     check();
     window.addEventListener("resize", check);
@@ -54,7 +62,6 @@ export default function Home() {
   }, []);
 
   const config = useConfigStore((state) => state.config);
-
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -66,25 +73,30 @@ export default function Home() {
           const decoded = JSON.parse(atob(sharedConfig));
           useConfigStore.getState().setConfig({ ...currentConfig, ...decoded });
           // Clean the URL so reloads use the persisted state instead of the shared URL
-          window.history.replaceState({}, document.title, window.location.pathname);
+          window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname,
+          );
         } catch (e) {
           console.error("Failed to parse shared config", e);
         }
       } else {
-        // Pre-fill default colors for the initial model if they are empty
-        const initialModel = MODELS.find((m) => m.id === currentConfig.selectedModel) || MODELS[0];
+        // Pre-fill default patterns for the initial model if they are empty
+        const initialModel =
+          MODELS.find((m) => m.id === currentConfig.selectedModel) || MODELS[0];
         let hasChanges = false;
-        const newColors = { ...currentConfig.partColors };
-        
+        const newPatterns = { ...currentConfig.partPatterns };
+
         initialModel.parts.forEach((part) => {
-          if (!newColors[part.id]) {
-            newColors[part.id] = currentConfig.mainColor;
+          if (!newPatterns[part.id]) {
+            newPatterns[part.id] = "default";
             hasChanges = true;
           }
         });
 
         if (hasChanges) {
-          useConfigStore.getState().updatePartColors(newColors);
+          useConfigStore.getState().updatePartPatterns(newPatterns);
         }
       }
     }
@@ -94,17 +106,15 @@ export default function Home() {
     return MODELS.find((m) => m.id === config.selectedModel) || MODELS[0];
   }, [config.selectedModel]);
 
-
-
   const handleShare = async () => {
     const configString = btoa(
       JSON.stringify({
         selectedModel: config.selectedModel,
-        partColors: config.partColors,
+        partPatterns: config.partPatterns,
         partTextures: config.partTextures,
         selectedDecal: config.selectedDecal,
         ambientSpin: config.ambientSpin,
-      })
+      }),
     );
 
     const url = `${window.location.origin}${window.location.pathname}?config=${configString}`;
@@ -158,15 +168,23 @@ export default function Home() {
             <>
               <div
                 className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full opacity-25 dark:opacity-15"
-                style={{ background: "radial-gradient(circle, var(--brand-primary) 0%, transparent 70%)" }}
+                style={{
+                  background:
+                    "radial-gradient(circle, var(--brand-primary) 0%, transparent 70%)",
+                }}
               />
               <div
                 className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full opacity-20 dark:opacity-10"
-                style={{ background: "radial-gradient(circle, var(--brand-secondary) 0%, transparent 70%)" }}
+                style={{
+                  background:
+                    "radial-gradient(circle, var(--brand-secondary) 0%, transparent 70%)",
+                }}
               />
               <div
                 className="absolute w-[70%] h-[70%] rounded-full opacity-20 dark:opacity-30 transition-colors duration-1000"
-                style={{ background: `radial-gradient(circle, ${config.mainColor} 0%, transparent 70%)` }}
+                style={{
+                  background: `radial-gradient(circle, ${config.mainColor} 0%, transparent 70%)`,
+                }}
               />
             </>
           ) : (
@@ -186,9 +204,14 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: isLoaded
-                ? (isMobileLandscape || (!isCollapsed && typeof window !== "undefined" && window.innerWidth < 640)
+                ? isMobileLandscape ||
+                  (!isCollapsed &&
+                    typeof window !== "undefined" &&
+                    window.innerWidth < 640)
                   ? 0
-                  : (theme === "dark" ? 0.08 : 0.12))
+                  : theme === "dark"
+                    ? 0.08
+                    : 0.12
                 : 0,
               scale: 1,
             }}
@@ -200,7 +223,7 @@ export default function Home() {
         </div>
 
         {/* Mobile Header */}
-        <header 
+        <header
           className="sm:hidden absolute top-0 right-0 h-full w-1/2 flex flex-col items-center justify-start z-40 pointer-events-none bg-transparent border-none px-2"
           style={{ paddingTop: "18vh" }}
         >
@@ -211,12 +234,16 @@ export default function Home() {
             className="pointer-events-auto"
             style={{ width: "100%" }}
           >
-            <h1 
+            <h1
               className="font-black tracking-tighter flex flex-col items-center gap-1 leading-[0.85] w-full"
               style={{ fontSize: "clamp(3.5rem, 16vw, 6rem)" }}
             >
-              <span className="bg-black text-white px-2 py-1 rounded flex justify-center items-center shadow-2xl w-[90%]">LUXI</span> 
-              <span className="text-brand-primary drop-shadow-lg text-center">WEAR</span>
+              <span className="bg-black text-white px-2 py-1 rounded flex justify-center items-center shadow-2xl w-[90%]">
+                LUXI
+              </span>
+              <span className="text-brand-primary drop-shadow-lg text-center">
+                WEAR
+              </span>
             </h1>
           </motion.div>
         </header>
@@ -229,7 +256,10 @@ export default function Home() {
             className="pointer-events-auto"
           >
             <h1 className="text-xl lg:text-2xl font-black tracking-tighter flex items-center gap-2">
-              <span className="bg-black text-white px-2 py-0.5 rounded flex items-center">LUXI</span> <span className="text-brand-primary">WEAR</span>
+              <span className="bg-black text-white px-2 py-0.5 rounded flex items-center">
+                LUXI
+              </span>{" "}
+              <span className="text-brand-primary">WEAR</span>
             </h1>
           </motion.div>
         </header>
@@ -245,7 +275,7 @@ export default function Home() {
             {(showConfigurator || shouldEagerLoad) && (
               <ConfiguratorCanvas
                 config={config}
-                onLoaded={() => setIsLoaded(true)}
+                onLoaded={handleCanvasLoaded}
                 isInitialLoading={!isLoaded}
               />
             )}
@@ -289,8 +319,11 @@ export default function Home() {
 
         {/* Signature - Desktop Only */}
         <div
-          className={`hidden lg:flex absolute bottom-8 right-8 z-100 items-center gap-1.5 pointer-events-none select-none transition-all duration-300 ${isMobileLandscape ? "opacity-30 scale-[0.4] origin-bottom-right" : "opacity-80"
-            }`}
+          className={`hidden lg:flex absolute bottom-8 right-8 z-100 items-center gap-1.5 pointer-events-none select-none transition-all duration-300 ${
+            isMobileLandscape
+              ? "opacity-30 scale-[0.4] origin-bottom-right"
+              : "opacity-80"
+          }`}
           style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
         >
           <span className="text-[10px] font-medium tracking-wide text-white/40">

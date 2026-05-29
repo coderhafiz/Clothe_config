@@ -9,11 +9,18 @@ import {
   startTransition,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronRight, Sliders, Share2, ShoppingBag } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Sliders,
+  Share2,
+  ShoppingBag,
+} from "lucide-react";
 import { useTheme } from "../ui/ThemeProvider";
 import ThemeToggle from "../ui/ThemeToggle";
 
 // ─── Curated contemporary streetwear palette ───────────────────────────────────
+
 const PALETTE = [
   { name: "Onyx Black", hex: "#121212" },
   { name: "Off-White", hex: "#f5f5f7" },
@@ -29,6 +36,14 @@ const TEXTURE_OPTIONS = {
   "Rough Linen": "linen",
   "Luxe Velvet": "velvet",
   "Street Leather": "leather",
+};
+
+const PATTERN_OPTIONS = {
+  "Default Pattern": "default",
+  "Modern Kaftan Pattern": "kaftan_pattern",
+  "Curtain Pattern": "curtain_pattern",
+  "Fabric 145 Pattern": "fabric_145_pattern",
+  "Fabric 85 Pattern": "fabric_85_pattern",
 };
 
 const DECAL_OPTIONS = {
@@ -62,9 +77,7 @@ function Folder({
         <ChevronDown
           className={`w-2.5 h-2.5 sm:w-3 sm:h-3 transition-transform shrink-0 text-text-muted ${open ? "" : "-rotate-90"}`}
         />
-        <span
-          className="text-[8px] sm:text-xs font-bold uppercase tracking-widest text-text-main"
-        >
+        <span className="text-[8px] sm:text-xs font-bold uppercase tracking-widest text-text-main">
           {title}
         </span>
       </button>
@@ -223,7 +236,12 @@ export default function ControlPanel({
   const config = useConfigStore((state) => state.config);
   const updateConfig = useConfigStore((state) => state.updateConfig);
   const updatePartColors = useConfigStore((state) => state.updatePartColors);
-  const updatePartTextures = useConfigStore((state) => state.updatePartTextures);
+  const updatePartPatterns = useConfigStore(
+    (state) => state.updatePartPatterns,
+  );
+  const updatePartTextures = useConfigStore(
+    (state) => state.updatePartTextures,
+  );
 
   const selectedModelInfo = useMemo(
     () => MODELS.find((m) => m.id === config.selectedModel) || MODELS[0],
@@ -267,10 +285,55 @@ export default function ControlPanel({
   const groupColor = (ids: string[]) =>
     config.partColors[ids[0]] || PALETTE[0].hex;
 
+  /** Set the same pattern on every part ID in a group. */
+  const setGroupPattern = useCallback(
+    (ids: string[], patternId: string) => {
+      const patternsToUpdate: Record<string, string> = {};
+      ids.forEach((id) => {
+        patternsToUpdate[id] = patternId;
+      });
+      updatePartPatterns(patternsToUpdate);
+    },
+    [updatePartPatterns],
+  );
+
+  /** Pattern to show for a group: uses first part's stored pattern, or default. */
+  const groupPattern = (ids: string[]) =>
+    config.partPatterns?.[ids[0]] || "default";
+
   const innerContent = (
-    <div
-      className="mx-0 sm:mx-2 rounded-2xl py-1.5 sm:py-2 bg-inner-panel-bg border border-inner-panel-border"
-    >
+    <div className="mx-0 sm:mx-2 rounded-2xl py-1.5 sm:py-2 bg-inner-panel-bg border border-inner-panel-border">
+      {/* ── Silhouette Selection ── */}
+      <Folder
+        key={`Silhouette-${isLandscape}`}
+        title="Apparel Silhouette"
+        defaultOpen={true}
+      >
+        <div className="grid grid-cols-2 gap-2 px-2 sm:px-5 py-2">
+          {MODELS.map((m) => {
+            const isSelected = config.selectedModel === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => updateConfig({ selectedModel: m.id })}
+                className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-brand-primary/10 border-brand-primary text-text-main shadow-lg shadow-brand-primary/5 scale-102"
+                    : "bg-white/5 border-glass-border hover:bg-white/10 text-text-muted hover:text-text-main"
+                }`}
+              >
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                  {m.id === "shirt" ? "Signature Tee" : "Modern Kaftan"}
+                </span>
+                <span className="text-[8px] opacity-60 mt-1">
+                  ${m.price} USD
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Folder>
+
       {/* ── View & Lighting ── */}
       <Folder
         key={`View-${isLandscape}`}
@@ -289,6 +352,11 @@ export default function ControlPanel({
           label="Ambient Spin"
           value={config.ambientSpin}
           onChange={(v) => updateConfig({ ambientSpin: v as boolean })}
+        />
+        <ToggleRow
+          label="Path Tracer"
+          value={config.pathTracer}
+          onChange={(v) => updateConfig({ pathTracer: v as boolean })}
         />
       </Folder>
 
@@ -323,7 +391,7 @@ export default function ControlPanel({
             }
           />
         ))}
-        </Folder>
+      </Folder>
 
       {/* ── Decals (T-Shirt Only) ── */}
       {config.selectedModel === "shirt" && (
@@ -336,70 +404,101 @@ export default function ControlPanel({
             label="Graphic Decal"
             value={config.selectedDecal}
             options={DECAL_OPTIONS}
-            onChange={(v) => startTransition(() => updateConfig({ selectedDecal: v as string }))}
+            onChange={(v) =>
+              startTransition(() =>
+                updateConfig({ selectedDecal: v as string }),
+              )
+            }
           />
         </Folder>
       )}
 
       {/* ── Colour swatches per Blender part ── */}
-      <Folder
-        key={`Colours-${isLandscape}`}
-        title="Colour Configurator"
-        defaultOpen={true}
-      >
-        <div className="px-2 sm:px-3 pb-2">
-          {partGroups.map(([label, ids]) => {
-            const current = groupColor(ids);
-            return (
-              <div
-                key={label}
-                className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 px-1.5 sm:px-1 py-1 sm:py-2 rounded-xl hover:bg-white/5 transition-colors landscape-optimized-row"
-              >
-                {/* Part label */}
-                <span className="text-[9px] sm:text-sm font-semibold text-text-main capitalize sm:w-28 shrink-0">
-                  {label}
-                </span>
+      {config.selectedModel === "shirt" && (
+        <Folder
+          key={`Colours-${isLandscape}`}
+          title="Colour Configurator"
+          defaultOpen={true}
+        >
+          <div className="px-2 sm:px-3 pb-2">
+            {partGroups.map(([label, ids]) => {
+              const current = groupColor(ids);
+              return (
+                <div
+                  key={label}
+                  className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 px-1.5 sm:px-1 py-1 sm:py-2 rounded-xl hover:bg-white/5 transition-colors landscape-optimized-row"
+                >
+                  {/* Part label */}
+                  <span className="text-[9px] sm:text-sm font-semibold text-text-main capitalize sm:w-28 shrink-0">
+                    {label}
+                  </span>
 
-                {/* Swatches */}
-                <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                  {PALETTE.map((color) => {
-                    const isActive = current === color.hex;
-                    return (
-                      <button
-                        key={color.hex}
-                        title={color.name}
-                        onClick={() => setGroupColor(ids, color.hex)}
-                        className="relative w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full transition-transform hover:scale-110 focus:outline-none shrink-0 border border-white/20"
-                        style={{ backgroundColor: color.hex }}
-                      >
-                        {isActive && (
-                          <span className="absolute inset-0 rounded-full ring-2 ring-offset-1 ring-[#c4a484] ring-offset-transparent" />
-                        )}
-                      </button>
-                    );
-                  })}
+                  {/* Swatches */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                    {PALETTE.map((color) => {
+                      const isActive = current === color.hex;
+                      return (
+                        <button
+                          key={color.hex}
+                          title={color.name}
+                          onClick={() => setGroupColor(ids, color.hex)}
+                          className="relative w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full transition-transform hover:scale-110 focus:outline-none shrink-0 border border-white/20"
+                          style={{ backgroundColor: color.hex }}
+                        >
+                          {isActive && (
+                            <span className="absolute inset-0 rounded-full ring-2 ring-offset-1 ring-[#c4a484] ring-offset-transparent" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-          
+              );
+            })}
+
             {/* Legend */}
-          <div className="flex flex-wrap gap-x-1.5 sm:gap-x-2 gap-y-0.5 sm:gap-y-1 px-1.5 sm:px-4 pt-2 sm:pt-3 landscape-optimized-legend">
-            {PALETTE.map((c) => (
-              <span
-                key={c.hex}
-                className="flex items-center gap-0.5 sm:gap-1 text-[7px] sm:text-xs text-text-muted"
-              >
+            <div className="flex flex-wrap gap-x-1.5 sm:gap-x-2 gap-y-0.5 sm:gap-y-1 px-1.5 sm:px-4 pt-2 sm:pt-3 landscape-optimized-legend">
+              {PALETTE.map((c) => (
                 <span
-                  className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full inline-block shrink-0"
-                  style={{ backgroundColor: c.hex }}
-                />
-                {c.name}
-              </span>
+                  key={c.hex}
+                  className="flex items-center gap-0.5 sm:gap-1 text-[7px] sm:text-xs text-text-muted"
+                >
+                  <span
+                    className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full inline-block shrink-0"
+                    style={{ backgroundColor: c.hex }}
+                  />
+                  {c.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </Folder>
+      )}
+
+      {/* ── Pattern Configurator ── */}
+      {config.selectedModel === "kaftan" && (
+        <Folder
+          key={`Patterns-${isLandscape}`}
+          title="Pattern Configurator"
+          defaultOpen={true}
+        >
+          <div className="space-y-1 py-1 px-2 sm:px-3 pb-2">
+            {partGroups.map(([label, ids]) => (
+              <SelectRow
+                key={`pat-${label}`}
+                label={label}
+                value={groupPattern(ids)}
+                options={PATTERN_OPTIONS}
+                onChange={(v) =>
+                  startTransition(() => {
+                    setGroupPattern(ids, v as string);
+                  })
+                }
+              />
             ))}
           </div>
-        </div>
-      </Folder>
+        </Folder>
+      )}
     </div>
   );
 
@@ -433,29 +532,29 @@ export default function ControlPanel({
         >
           {/* Top row with buttons and close chevron */}
           <div className="flex justify-between items-center w-full mb-2 sm:mb-4">
-          {/* Action buttons — always in sidebar */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            <ThemeToggle />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onShare();
-              }}
-              className="p-1 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
-            >
-              <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-brand-primary" />
-            </button>
-            <button
-              onClick={(e) => e.stopPropagation()}
-              className="p-1 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
-            >
-              <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4 text-brand-primary" />
-              <span className="absolute top-0 right-0 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-brand-secondary rounded-full border border-bg-dark" />
-            </button>
-          </div>
-          
-          <div className="hidden sm:block" />
-            
+            {/* Action buttons — always in sidebar */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <ThemeToggle />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShare();
+                }}
+                className="p-1 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
+              >
+                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-brand-primary" />
+              </button>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="p-1 sm:p-2 glass rounded-full glass-hover relative cursor-pointer"
+              >
+                <ShoppingBag className="w-3 h-3 sm:w-4 sm:h-4 text-brand-primary" />
+                <span className="absolute top-0 right-0 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-brand-secondary rounded-full border border-bg-dark" />
+              </button>
+            </div>
+
+            <div className="hidden sm:block" />
+
             <button
               onClick={(e) => {
                 e.stopPropagation();

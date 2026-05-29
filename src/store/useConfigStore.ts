@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface ConfigState {
   mainColor: string;
@@ -9,10 +9,12 @@ export interface ConfigState {
   lightIntensity: number;
   partColors: Record<string, string>;
   partTextures: Record<string, string>;
+  partPatterns: Record<string, string>;
   trouserTexture: string;
   trouserColor: string;
   selectedDecal: string;
   ambientSpin: boolean;
+  pathTracer: boolean;
 }
 
 export const baseConfig: ConfigState = {
@@ -23,10 +25,12 @@ export const baseConfig: ConfigState = {
   lightIntensity: 2.0,
   partColors: {},
   partTextures: {},
+  partPatterns: {},
   trouserTexture: "jeans",
   trouserColor: "#f5f5f7",
   selectedDecal: "luxi",
   ambientSpin: true,
+  pathTracer: false,
 };
 
 interface ConfigStore {
@@ -35,6 +39,7 @@ interface ConfigStore {
   updateConfig: (partial: Partial<ConfigState>) => void;
   updatePartColors: (colors: Record<string, string>) => void;
   updatePartTextures: (textures: Record<string, string>) => void;
+  updatePartPatterns: (patterns: Record<string, string>) => void;
 }
 
 export const useConfigStore = create<ConfigStore>()(
@@ -42,16 +47,38 @@ export const useConfigStore = create<ConfigStore>()(
     (set) => ({
       config: baseConfig,
       setConfig: (config) => set({ config }),
-      updateConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
-      updatePartColors: (colors) => set((state) => ({ 
-        config: { ...state.config, partColors: { ...state.config.partColors, ...colors } } 
-      })),
-      updatePartTextures: (textures) => set((state) => ({ 
-        config: { ...state.config, partTextures: { ...state.config.partTextures, ...textures } } 
-      })),
+      updateConfig: (partial) =>
+        set((state) => ({ config: { ...state.config, ...partial } })),
+      updatePartColors: (colors) =>
+        set((state) => ({
+          config: {
+            ...state.config,
+            partColors: { ...state.config.partColors, ...colors },
+          },
+        })),
+      updatePartTextures: (textures) =>
+        set((state) => ({
+          config: {
+            ...state.config,
+            partTextures: { ...state.config.partTextures, ...textures },
+          },
+        })),
+      updatePartPatterns: (patterns) =>
+        set((state) => ({
+          config: {
+            ...state.config,
+            partPatterns: { ...state.config.partPatterns, ...patterns },
+          },
+        })),
     }),
     {
-      name: 'luxi-config-storage',
+      name: "luxi-config-storage",
+      partialize: (state) => ({
+        config: {
+          ...state.config,
+          pathTracer: false,
+        },
+      }),
     }
-  )
+  ),
 );
