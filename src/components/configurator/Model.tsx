@@ -442,7 +442,7 @@ export function Model({
   onFirstPaint?: () => void;
 }) {
   const { gl } = useThree();
-  const { update, reset } = usePathtracer();
+  const { update, reset, pathtracer } = usePathtracer();
 
   const wrapperRef = useRef<Group>(null!);
 
@@ -2138,40 +2138,40 @@ vec4 tri(sampler2D tex, vec3 p, vec3 n) {
   }, [shirtMesh, rotatableScene, localCamPos, localChestTarget]);
 
 
-  // Sync the pathtracer BVH after materials/textures have been updated in this component.
-  // NOTE: Only call update() here — never reset(). reset() wipes sample accumulation and
-  // causes the blank-screen restart loop. The reset() is triggered by ConfiguratorCanvas's
-  // useFrame loop when it detects model/camera/light changes, which is the correct place.
-  //
-  // IMPORTANT: config.pathTracer is intentionally NOT in this dep array.
-  // When pathTracer toggles to true, React fires this effect AFTER the path tracer has
-  // already started rendering samples. Calling update() at that point silently resets
-  // sample count to 0 (blank canvas) then re-accumulates (visible fade-in).
-  // The initial BVH sync on activation is handled by ConfiguratorCanvas's justEnteredPathTracer
-  // block in useFrame, which runs BEFORE the first sample is ever rendered.
+  // Sync the pathtracer materials after colors/textures/patterns/decals have been updated.
+  // We call pathtracer.updateMaterials() but override reset() with a no-op to allow the new materials to
+  // temporally blend/fade over existing samples instead of resetting the entire canvas.
   useEffect(() => {
-    if (config.pathTracer) {
-      update();
+    if (config.pathTracer && pathtracer) {
+      const ptAny = pathtracer as any;
+      const originalReset = ptAny.reset;
+      ptAny.reset = () => {};
+      try {
+        pathtracer.updateMaterials();
+      } finally {
+        ptAny.reset = originalReset;
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    // config.pathTracer  ← intentionally excluded: adding it fires update() AFTER the path
-    //                       tracer has already started sampling, silently resetting to 0
-    //                       (blank canvas). Initial BVH sync is done in ConfiguratorCanvas's
-    //                       justEnteredPathTracer block BEFORE the first sample renders.
     config.mainColor,
     config.accentColor,
     config.cushionColor,
-    config.selectedModel,
-    config.lightIntensity,
     config.partColors,
     config.partTextures,
     config.partPatterns,
     config.trouserColor,
     config.trouserTexture,
     config.selectedDecal,
-    update,
+    pathtracer,
   ]);
+
+  // Sync geometry changes (swapping selected model between shirt and kaftan) which requires a BVH rebuild.
+  useEffect(() => {
+    if (config.pathTracer) {
+      update();
+    }
+  }, [config.selectedModel, config.pathTracer, update]);
 
   return (
     <group ref={wrapperRef} scale={0}>
