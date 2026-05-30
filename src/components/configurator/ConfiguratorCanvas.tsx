@@ -17,7 +17,8 @@ import {
   Html,
   useGLTF,
 } from "@react-three/drei";
-import { Pathtracer, usePathtracer, ShapedAreaLight } from "@react-three/gpu-pathtracer";
+import { Pathtracer, usePathtracer, ShapedAreaLight, PhysicalCamera } from "@react-three/gpu-pathtracer";
+import { DenoiseMaterial, BlurredEnvMapGenerator } from "three-gpu-pathtracer";
 import { EffectComposer, DepthOfField } from "@react-three/postprocessing";
 import * as THREE_CORE from "three";
 import { easing } from "maath";
@@ -168,7 +169,7 @@ function SceneContent({
   isInitialLoading?: boolean;
   setIsPathTracerLoading: (loading: boolean) => void;
 }) {
-  const { camera, gl } = useThree();
+  const { camera, gl, scene } = useThree();
   const [focusDistance, setFocusDistance] = useState(1.5);
   const { update, reset, pathtracer } = usePathtracer();
 
@@ -176,6 +177,97 @@ function SceneContent({
   const lastModelRotationY = useRef(0);
   const lastLoadingRef = useRef(false);
   const hasCompiled = useRef(false);
+
+  const envMapGenerator = useMemo(() => new BlurredEnvMapGenerator(gl), [gl]);
+  const blurredEnvMapRef = useRef<THREE_CORE.Texture | null>(null);
+
+  // Dispose of environment map generator resources on unmount
+  useEffect(() => {
+    return () => {
+      envMapGenerator.dispose();
+      if (blurredEnvMapRef.current) {
+        blurredEnvMapRef.current.dispose();
+      }
+    };
+  }, [envMapGenerator]);
+
+  const lastEnvironment = useRef<THREE_CORE.Texture | null>(null);
+
+  // Pre-blur the environment map texture when it changes to speed up path tracer convergence
+  useEffect(() => {
+    if (!pathtracer || !scene.environment) return;
+
+    // Clean up previously generated blurred texture
+    if (blurredEnvMapRef.current) {
+      blurredEnvMapRef.current.dispose();
+      blurredEnvMapRef.current = null;
+    }
+
+    // Generate blurred equirectangular texture (blur amount = 0.15 matches moderate smoothing of hot spots)
+    const blurred = envMapGenerator.generate(scene.environment, 0.15);
+    blurredEnvMapRef.current = blurred;
+
+    // Temporarily swap scene.environment during the pathtracer update to load the blurred version
+    const originalEnv = scene.environment;
+    scene.environment = blurred;
+    
+    pathtracer.updateEnvironment();
+    reset();
+
+    // Restore the original sharp texture for standard WebGL rendering
+    scene.environment = originalEnv;
+    lastEnvironment.current = originalEnv;
+  }, [scene.environment, pathtracer, envMapGenerator, reset]);
+
+  const denoiseMaterial = useMemo(() => new DenoiseMaterial(), []);
+
+  // Dispose of denoise material on unmount to prevent leaks
+  useEffect(() => {
+    return () => {
+      denoiseMaterial.dispose();
+    };
+  }, [denoiseMaterial]);
+
+  // Hook renderToCanvasCallback to inject the DenoiseMaterial pass when enabled
+  useEffect(() => {
+    if (!pathtracer) return;
+
+    const pt = pathtracer as any;
+    pt.renderToCanvasCallback = (target: any, renderer: any, quad: any) => {
+      if (config.denoise) {
+        const originalMaterial = quad.material;
+
+        // Configure bilateral filter parameters with performance-optimized values
+        denoiseMaterial.sigma = 3.0;
+        denoiseMaterial.threshold = 0.03;
+        denoiseMaterial.kSigma = 1.0;
+        denoiseMaterial.map = target.texture;
+        denoiseMaterial.opacity = originalMaterial.opacity;
+        denoiseMaterial.blending = originalMaterial.blending;
+
+        // Swap to denoise material
+        quad.material = denoiseMaterial;
+
+        const currentAutoClear = renderer.autoClear;
+        renderer.autoClear = false;
+        quad.render(renderer);
+        renderer.autoClear = currentAutoClear;
+
+        // Restore original material to maintain state
+        quad.material = originalMaterial;
+      } else {
+        // Fallback to default render pass
+        const currentAutoClear = renderer.autoClear;
+        renderer.autoClear = false;
+        quad.render(renderer);
+        renderer.autoClear = currentAutoClear;
+      }
+    };
+  }, [
+    pathtracer,
+    config.denoise,
+    denoiseMaterial,
+  ]);
   
   // Reset compilation flag when path tracer toggles or model changes,
   // and sync lastLoadingRef so the loading overlay state is consistent.
@@ -371,7 +463,6 @@ function SceneContent({
   const areaLightRefs = useRef<Record<string, THREE_CORE.RectAreaLight>>({});
 
   const isFirstFrame = useRef(true);
-  const lastEnvironment = useRef<THREE_CORE.Texture | null>(null);
   const lastLightIntensity = useRef(config.lightIntensity);
   // Always initialise to false so that if the component mounts while path tracer is already
   // active, justEnteredPathTracer correctly fires on the first frame (triggering update() + camera snap).
@@ -498,12 +589,7 @@ function SceneContent({
         lastModelRotationY.current = rotationRef.current.y;
       }
 
-      // 3. Sync environment map when it loads or changes
-      if (state.scene.environment !== lastEnvironment.current) {
-        pathtracer.updateEnvironment();
-        reset();
-        lastEnvironment.current = state.scene.environment;
-      }
+      // 3. Sync environment map when it loads or changes (handled by useEffect with BlurredEnvMapGenerator)
 
       // 4. Sync lights when intensity or mode changes
       if (
@@ -567,6 +653,17 @@ function SceneContent({
 
   return (
     <>
+      <PhysicalCamera
+        position={[0.2587, 0.0728, -0.232]}
+        fov={45}
+        far={100}
+        focusDistance={focusDistance}
+        fStop={1.4}
+        bokehSize={0.012}
+        apertureBlades={0}
+        apertureRotation={0}
+        anamorphicRatio={1}
+      />
       <ResizeFix />
       <Environment
         files="/hdri/brown_photostudio_01_1k.exr"
@@ -870,20 +967,17 @@ export default function ConfiguratorCanvas({
         */}
 
         <Suspense fallback={null}>
-          <PerspectiveCamera
-            makeDefault
-            position={[0.2587, 0.0728, -0.232]}
-            fov={45}
-            far={100}
-          />
+
 
           <Pathtracer
             ref={pathtracerRef}
             enabled={config.pathTracer}
             samples={512}
-            bounces={2}
-            tiles={[2, 2]}
+            bounces={10}
+            tiles={[3, 3]}
             filteredGlossyFactor={0.5}
+            renderDelay={100}
+            fadeDuration={500}
             resolutionFactor={0.85}
             dynamicLowRes={true}
             lowResScale={0.5}

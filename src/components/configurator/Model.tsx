@@ -364,15 +364,18 @@ function generateTriplanarUVs(mesh: THREE.Mesh, scale: number = 1.0, useLocalSpa
 
   const count = posAttr.count;
   const uvs = new Float32Array(count * 2);
+  const tangents = new Float32Array(count * 4);
 
   mesh.updateMatrixWorld(true);
   const matrix = mesh.matrixWorld;
   const normalMatrix = new THREE.Matrix3().getNormalMatrix(matrix);
+  const invMatrix = new THREE.Matrix4().copy(matrix).invert();
 
   const localPos = new THREE.Vector3();
   const worldPos = new THREE.Vector3();
   const localNorm = new THREE.Vector3();
   const worldNorm = new THREE.Vector3();
+  const localTan = new THREE.Vector3();
 
   for (let i = 0; i < count; i++) {
     localPos.fromBufferAttribute(posAttr, i);
@@ -399,28 +402,42 @@ function generateTriplanarUVs(mesh: THREE.Mesh, scale: number = 1.0, useLocalSpa
 
     let u = 0;
     let v = 0;
+    let tx = 0, ty = 0, tz = 0;
 
     // Match WebGL shader mappings:
-    // x normal: p.zy
-    // y normal: p.zx
-    // z normal: p.yx
+    // x normal: p.zy (u = p.z, v = p.y) -> tangent along Z (0, 0, 1)
+    // y normal: p.zx (u = p.z, v = p.x) -> tangent along Z (0, 0, 1)
+    // z normal: p.yx (u = p.y, v = p.x) -> tangent along Y (0, 1, 0)
     if (absX >= absY && absX >= absZ) {
       u = worldPos.z * scale;
       v = worldPos.y * scale;
+      tx = 0; ty = 0; tz = 1;
     } else if (absY >= absX && absY >= absZ) {
       u = worldPos.z * scale;
       v = worldPos.x * scale;
+      tx = 0; ty = 0; tz = 1;
     } else {
       u = worldPos.y * scale;
       v = worldPos.x * scale;
+      tx = 0; ty = 1; tz = 0;
     }
 
     uvs[i * 2] = u;
     uvs[i * 2 + 1] = v;
+
+    localTan.set(tx, ty, tz).transformDirection(invMatrix).normalize();
+    tangents[i * 4] = localTan.x;
+    tangents[i * 4 + 1] = localTan.y;
+    tangents[i * 4 + 2] = localTan.z;
+    tangents[i * 4 + 3] = 1.0;
   }
 
   mesh.geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+  mesh.geometry.setAttribute("tangent", new THREE.BufferAttribute(tangents, 4));
   mesh.geometry.attributes.uv.needsUpdate = true;
+  if (mesh.geometry.attributes.tangent) {
+    mesh.geometry.attributes.tangent.needsUpdate = true;
+  }
 }
 
 // =======================
@@ -1377,6 +1394,7 @@ vec4 tri(sampler2D tex, vec3 p, vec3 n) {
               const texKey = isWall ? "wooden_wall" : "dark_wood";
               const texMap = textureMaps[texKey];
 
+              const pathTracerMode = config.pathTracer;
               targetMat.map = texMap.map;
               targetMat.roughnessMap = isPlatform ? null : texMap.roughOrAo;
               targetMat.normalMap = isPlatform ? null : texMap.normalMap;

@@ -15,6 +15,10 @@ export interface ConfigState {
   selectedDecal: string;
   ambientSpin: boolean;
   pathTracer: boolean;
+  denoise: boolean;
+  denoiseSigma: number;
+  denoiseThreshold: number;
+  denoiseKSigma: number;
 }
 
 export const baseConfig: ConfigState = {
@@ -31,6 +35,10 @@ export const baseConfig: ConfigState = {
   selectedDecal: "luxi",
   ambientSpin: true,
   pathTracer: false,
+  denoise: true,
+  denoiseSigma: 3.0,
+  denoiseThreshold: 0.03,
+  denoiseKSigma: 1.0,
 };
 
 interface ConfigStore {
@@ -73,6 +81,14 @@ export const useConfigStore = create<ConfigStore>()(
     }),
     {
       name: "luxi-config-storage",
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState as any),
+        config: {
+          ...currentState.config,
+          ...(persistedState as any)?.config,
+        },
+      }),
       partialize: (state) => ({
         config: {
           ...state.config,

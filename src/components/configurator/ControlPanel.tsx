@@ -123,7 +123,8 @@ function SliderRow({
   step: number;
   onChange: (v: number) => void;
 }) {
-  const display = step < 1 ? value.toFixed(2) : Math.round(value).toString();
+  const safeValue = value ?? 0;
+  const display = step < 1 ? safeValue.toFixed(2) : Math.round(safeValue).toString();
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-2 sm:px-5 py-1 sm:py-2 landscape-optimized-row">
       <div className="flex justify-between items-center sm:block sm:w-32 shrink-0">
@@ -140,7 +141,7 @@ function SliderRow({
           min={min}
           max={max}
           step={step}
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(Number(e.target.value))}
           className="flex-1 h-1 accent-[#c4a484] cursor-pointer"
         />
@@ -358,6 +359,13 @@ export default function ControlPanel({
           value={config.pathTracer}
           onChange={(v) => updateConfig({ pathTracer: v as boolean })}
         />
+        {config.pathTracer && (
+          <ToggleRow
+            label="Denoise"
+            value={config.denoise}
+            onChange={(v) => updateConfig({ denoise: v as boolean })}
+          />
+        )}
       </Folder>
 
       {/* ── Fabric Textures ── */}
