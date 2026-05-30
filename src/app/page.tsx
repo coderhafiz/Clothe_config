@@ -241,7 +241,10 @@ export default function Home() {
               <span className="bg-black text-white px-2 py-1 rounded flex justify-center items-center shadow-2xl w-[90%]">
                 LUXI
               </span>
-              <span className="text-brand-primary drop-shadow-lg text-center">
+              <span
+                className="text-brand-primary drop-shadow-lg text-center"
+                style={{ WebkitTextStroke: "1.5px #000000" }}
+              >
                 WEAR
               </span>
             </h1>
@@ -259,7 +262,12 @@ export default function Home() {
               <span className="bg-black text-white px-2 py-0.5 rounded flex items-center">
                 LUXI
               </span>{" "}
-              <span className="text-brand-primary">WEAR</span>
+              <span
+                className="text-brand-primary"
+                style={{ WebkitTextStroke: "0.5px #000000" }}
+              >
+                WEAR
+              </span>
             </h1>
           </motion.div>
         </header>
