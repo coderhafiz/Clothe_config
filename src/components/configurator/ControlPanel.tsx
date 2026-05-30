@@ -309,14 +309,14 @@ export default function ControlPanel({
         title="Apparel Silhouette"
         defaultOpen={true}
       >
-        <div className="grid grid-cols-2 gap-2 px-2 sm:px-5 py-2">
+        <div className="flex flex-col sm:flex-row gap-2 px-2 sm:px-5 py-2">
           {MODELS.map((m) => {
             const isSelected = config.selectedModel === m.id;
             return (
               <button
                 key={m.id}
                 onClick={() => updateConfig({ selectedModel: m.id })}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? "bg-brand-primary/10 border-brand-primary text-text-main shadow-lg shadow-brand-primary/5 scale-102"
                     : "bg-white/5 border-glass-border hover:bg-white/10 text-text-muted hover:text-text-main"
